@@ -21,10 +21,10 @@
 // #include "RS-FEC.h"
 
 // SX1276 has the following connections:
-// NSS pin:   5
-// DIO0 pin:  13
-// RESET pin: 0 
-// DIO1 pin:  14 (N/A)
+// NSS pin:   1
+// DIO0 pin:  5
+// RESET pin: 4 
+// DIO1 pin:  6 (N/A)
 SX1276 radio = new Module(1, 5, 4, 6);
 
 //FEC Setup
@@ -34,6 +34,8 @@ SX1276 radio = new Module(1, 5, 4, 6);
 // char message_frame[msglen]; //container for shorter messages
 // char repaired[msglen];
 // char encoded[msglen + ECC_LENGTH];
+//66110NBA03
+//223298730
 
 // RS::ReedSolomon<msglen, ECC_LENGTH> rs;
 

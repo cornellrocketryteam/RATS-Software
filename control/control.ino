@@ -52,7 +52,7 @@ double groundLat = 32.990509;
 double groundLong = -106.975575;
 
 int stepPos = 0;
-int num_messages = 0;
+int num_messages = 1;
 
 // Utility function for printing doubles
 void printDouble( double val, unsigned int precision){
