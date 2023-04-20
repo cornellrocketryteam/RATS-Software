@@ -1,8 +1,6 @@
 # RATS-Software
 This is the code for receiving rocket telemetry, controlling the motor and servo that aim the antenna, and forwarding data along to the GUI laptop via serial.
 
-# Instructions to run:
-
 ## Board Manager:
 Earle F. Philhower, III (https://github.com/earlephilhower/arduino-pico)
 
