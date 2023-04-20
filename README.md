@@ -7,7 +7,7 @@ This is the code for receiving rocket telemetry, controlling the motor and servo
 Earle F. Philhower, III (https://github.com/earlephilhower/arduino-pico)
 
 ## Libraries:
-The only library needed at the moment is RadioLib which can be installed from Arduino IDE. The FEC Varients (WIP) require RS-FEC as well (https://github.com/simonyipeter/Arduino-FEC)
+The only library needed at the moment is RadioLib which can be installed from Arduino IDE or (https://github.com/jgromes/RadioLib). The FEC Varients (WIP) require ArduinoFEC as well which is in this repo and originally from https://github.com/simonyipeter/Arduino-FEC
 
 ## Pins:
 
