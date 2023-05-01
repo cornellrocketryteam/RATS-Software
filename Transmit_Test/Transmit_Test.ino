@@ -22,10 +22,10 @@
 
 // SX1276 has the following connections:
 // NSS pin:   1
-// DIO0 pin:  5
-// RESET pin: 4 
-// DIO1 pin:  6 (N/A)
-SX1276 radio = new Module(1, 5, 4, 6);
+// DIO0 pin:  20
+// RESET pin: 15
+// DIO1 pin:  6
+SX1276 radio = new Module(1, 20, 15, 6);
 
 //FEC Setup
 // String test = "{\"long\":0.03,\"lat\":0.07,\"glong\":0.0,\"glat\":0.0,\"elev\":6534.9}";
@@ -41,10 +41,10 @@ SX1276 radio = new Module(1, 5, 4, 6);
 
 void setup() {
 
-  SPI.setRX(0);
-  SPI.setTX(3);
+  SPI.setRX(16);
+  SPI.setTX(19);
   SPI.setCS(1);
-  SPI.setSCK(2);
+  SPI.setSCK(18);
 
   delay(3000);
   Serial.begin(9600);
