@@ -3,11 +3,11 @@
  Rotational Antenna Tracking System Software
  Cornell Rocketry Team
 
- This program receives rocket telemetry, 
- aims the antenna at the rocket's location, 
+ This program receives rocket telemetry,
+ aims the antenna at the rocket's location,
  and passes the data on to the ground station laptop
 
- Created SP23 
+ Created SP23
  by Zach Garcia
 
  */
@@ -18,23 +18,22 @@
 // #include <Stepper.h>
 // #include <Servo.h>
 // #include <ArduinoJson.h>
-#include <cstring>
-#include <string>
-#include <stdio.h>
-#include <iostream>
-#include <RadioLib.h>
-#include "pico/stdlib.h"
 #include "../lib/RS-FEC.h"
-#include "rfm/pico_hal.h"
-#include "pins.hpp"
+#include "../lib/pico-servo/include/pico_servo.h"
 #include "data.hpp"
 #include "formulas.hpp"
+#include "pico/stdlib.h"
+#include "pins.hpp"
+#include "rfm/pico_hal.h"
 #include "stepper.h"
-#include "../lib/pico-servo/include/pico_servo.h"
+#include <RadioLib.h>
+#include <cstring>
+#include <iostream>
+#include <stdio.h>
+#include <string>
 
-#include "../lib/pico-stepper/lib/stepper.c"
 #include "../lib/pico-servo/src/pico_servo.c"
-
+#include "../lib/pico-stepper/lib/stepper.c"
 
 bool launched = false;
 bool recPacket = false;
@@ -48,7 +47,7 @@ float rockLat;
 float rockLong;
 
 // RadioLib setup
-PicoHal* hal = new PicoHal(SPI_PORT, SPI_MISO, SPI_MOSI, SPI_SCK, 8000000);
+PicoHal *hal = new PicoHal(SPI_PORT, SPI_MISO, SPI_MOSI, SPI_SCK, 8000000);
 
 SX1276 radio = new Module(hal, RX_CS, RX_DIO0, RADIOLIB_NC, RX_DIO1);
 
@@ -83,10 +82,8 @@ int main() {
     // Set servo to 0 degrees
     servo_move_to(12, 0);
 
-    //Initialize stepper
-    stepper_init(&stepper, stepper_pin_1A, stepper_pin_1B,
-                 stepper_pin_2A, stepper_pin_2B,
-                 stepper_steps_per_revolution, stepping_mode);
+    // Initialize stepper
+    stepper_init(&stepper, stepper_pin_1A, stepper_pin_1B, stepper_pin_2A, stepper_pin_2B, stepper_steps_per_revolution, stepping_mode);
     stepper_set_speed_rpm(&stepper, speed);
 
     gpio_init(RX_CS);
@@ -113,22 +110,26 @@ int main() {
         // receive a packet
         printf("[SX1276] Waiting for incoming transmission ... ");
 
-        uint8_t encoded[msglen+ECC_LENGTH];
-        int state = radio.receive(encoded, msglen+ECC_LENGTH);
-        
+        uint8_t encoded[msglen + ECC_LENGTH];
+        int state = radio.receive(encoded, msglen + ECC_LENGTH);
+
         if (state == RADIOLIB_ERR_NONE) {
             // packet was successfully received
             printf("success!");
             // print the data of the packet
             printf("\n[SX1276] Raw Data Length: %d\n[SX1276] Raw Data: ", sizeof(encoded));
-            for(uint i = 0; i < sizeof(encoded); i++) {    printf("%c", encoded[i]);    }    printf("\n");
+            for (uint i = 0; i < sizeof(encoded); i++) {
+                printf("%c", encoded[i]);
+            }
+            printf("\n");
 
             rs.Decode(encoded, repaired);
             std::string result = repaired;
             printf("Result: \"");
-            for (int i=0; i<msglen; i++) printf("%c", (char) repaired[i]);
+            for (int i = 0; i < msglen; i++)
+                printf("%c", (char)repaired[i]);
             printf("\"\n");
-            
+
             // // print the RSSI (Received Signal Strength Indicator)
             // // of the last received packet
             // printf(F("[SX1278] RSSI:\t\t\t"));
@@ -150,10 +151,10 @@ int main() {
             // Send data to laptop
             printf("%s", repaired);
 
-            //Extract values
-            memcpy(&rockElev,repaired+8,4);  // Altitude field
-            memcpy(&rockLat,repaired+12,4);  // Latitude field
-            memcpy(&rockLong,repaired+16,4); // Longitude field
+            // Extract values
+            memcpy(&rockElev, repaired + 8, 4);  // Altitude field
+            memcpy(&rockLat, repaired + 12, 4);  // Latitude field
+            memcpy(&rockLong, repaired + 16, 4); // Longitude field
 
         } else if (state == RADIOLIB_ERR_RX_TIMEOUT) {
             // timeout occurred while waiting for a packet
@@ -169,34 +170,34 @@ int main() {
         if (launched && launchTime == 0) {
             launchTime = to_ms_since_boot(get_absolute_time());
         } else if (launched && !recPacket) {
-        int dataIndex = (to_ms_since_boot(get_absolute_time()) - launchTime) / 500;
-        rockElev = alt_data[dataIndex];
-        //switch to backup data
+            int dataIndex = (to_ms_since_boot(get_absolute_time()) - launchTime) / 500;
+            rockElev = alt_data[dataIndex];
+            // switch to backup data
 
         } else if (!recPacket) {
             break;
         }
 
-        //convert coordinates to angles
+        // convert coordinates to angles
         double dist = distance(rockLat, rockLong, groundLat, groundLong);
-        #ifdef DEBUG
+#ifdef DEBUG
         printf("Distance: ");
         printf("%d", dist);
         printf(" km\n");
-        #endif
+#endif
         double bear = bearing(rockLat, rockLong, groundLat, groundLong);
-        #ifdef DEBUG
+#ifdef DEBUG
         printf("Bearing: ");
         printf("%d", bear);
         printf(" degrees\n");
-        #endif
+#endif
         double asc = ascension(rockElev, groundElev, dist);
-        #ifdef DEBUG
+#ifdef DEBUG
         printf("Ascension: ");
         printf("%d", asc);
         printf(" degrees\n");
-        #endif
-        int target = -1*(bear / 360) * platformStepsPerRev;
+#endif
+        int target = -1 * (bear / 360) * platformStepsPerRev;
         int stepsToTake = target - stepPos;
         // if (target - stepPos > (platformStepsPerRev / 2)) {
         //   stepsToTake = (target - stepPos) - platformStepsPerRev;
@@ -207,8 +208,8 @@ int main() {
         // }
         stepPos = target;
 
-        //aim antenna
-        servo_move_to(12, 90-asc);
+        // aim antenna
+        servo_move_to(12, 90 - asc);
         stepper_rotate_steps(&stepper, stepsToTake);
         stepper_release(&stepper);
         sleep_ms(500);
