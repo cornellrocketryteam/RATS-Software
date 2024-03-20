@@ -97,23 +97,30 @@ int main() {
     sleep_ms(10);
     gpio_put(RX_RST, 1);
 
+#ifdef DEBUG
     printf("[SX1276] Initializing ... ");
+#endif
 
     int state = radio.begin();
     if (state != RADIOLIB_ERR_NONE) {
         printf("failed, code %d\n", state);
         return 1;
     }
+#ifdef DEBUG
     printf("success!\n");
+#endif
 
     while (true) {
         // receive a packet
+#ifdef DEBUG
         printf("[SX1276] Waiting for incoming transmission ... ");
+#endif
 
         uint8_t encoded[msglen + ECC_LENGTH];
         int state = radio.receive(encoded, msglen + ECC_LENGTH);
 
         if (state == RADIOLIB_ERR_NONE) {
+#ifdef DEBUG
             // packet was successfully received
             printf("success!");
             // print the data of the packet
@@ -122,39 +129,42 @@ int main() {
                 printf("%c", encoded[i]);
             }
             printf("\n");
+#endif
 
             rs.Decode(encoded, repaired);
             std::string result = repaired;
+#ifdef DEBUG
             printf("Result: \"");
             for (int i = 0; i < msglen; i++)
                 printf("%c", (char)repaired[i]);
             printf("\"\n");
 
-            // // print the RSSI (Received Signal Strength Indicator)
-            // // of the last received packet
-            // printf(F("[SX1278] RSSI:\t\t\t"));
-            // printf(radio.getRSSI());
-            // printf(F(" dBm\n"));
+            // print the RSSI (Received Signal Strength Indicator)
+            // of the last received packet
+            printf("[SX1278] RSSI:\t\t\t");
+            printf("%f", radio.getRSSI());
+            printf(" dBm\n");
 
-            // // print the SNR (Signal-to-Noise Ratio)
-            // // of the last received packet
-            // printf(F("[SX1278] SNR:\t\t\t"));
-            // printf(radio.getSNR());
-            // printf(F(" dB\n"));
+            // print the SNR (Signal-to-Noise Ratio)
+            // of the last received packet
+            printf("[SX1278] SNR:\t\t\t");
+            printf("%f", radio.getSNR());
+            printf(" dB\n");
 
-            // // print frequency error
-            // // of the last received packet
-            // printf(F("[SX1278] Frequency error:\t"));
-            // printf(radio.getFrequencyError());
-            // printf(F(" Hz\n"));
+            // print frequency error
+            // of the last received packet
+            printf("[SX1278] Frequency error:\t");
+            printf("%f", radio.getFrequencyError());
+            printf(" Hz\n");
+#endif
 
-            // Send data to laptop
+            // Send data to Ground Station
             printf("%s", repaired);
 
             // Extract values
-            memcpy(&rockElev, repaired + 8, 4);  // Altitude field
-            memcpy(&rockLat, repaired + 12, 4);  // Latitude field
-            memcpy(&rockLong, repaired + 16, 4); // Longitude field
+            memcpy(&rockElev, repaired + 9, 4);  // Altitude field
+            memcpy(&rockLat, repaired + 13, 4);  // Latitude field
+            memcpy(&rockLong, repaired + 17, 4); // Longitude field
 
         } else if (state == RADIOLIB_ERR_RX_TIMEOUT) {
             // timeout occurred while waiting for a packet
@@ -170,9 +180,9 @@ int main() {
         if (launched && launchTime == 0) {
             launchTime = to_ms_since_boot(get_absolute_time());
         } else if (launched && !recPacket) {
+            // switch to backup data
             int dataIndex = (to_ms_since_boot(get_absolute_time()) - launchTime) / 500;
             rockElev = alt_data[dataIndex];
-            // switch to backup data
 
         } else if (!recPacket) {
             break;
@@ -197,8 +207,9 @@ int main() {
         printf("%d", asc);
         printf(" degrees\n");
 #endif
-        int target = -1 * (bear / 360) * platformStepsPerRev;
-        int stepsToTake = target - stepPos;
+        // // Disabled since we removed the stepper motor
+        // int target = -1 * (bear / 360) * platformStepsPerRev;
+        // int stepsToTake = target - stepPos;
         // if (target - stepPos > (platformStepsPerRev / 2)) {
         //   stepsToTake = (target - stepPos) - platformStepsPerRev;
         // } else if (target - stepPos < -(platformStepsPerRev / 2)) {
@@ -206,12 +217,12 @@ int main() {
         // } else {
         //   stepsToTake = target - stepPos;
         // }
-        stepPos = target;
+        // stepPos = target;
 
         // aim antenna
         servo_move_to(12, 90 - asc);
-        stepper_rotate_steps(&stepper, stepsToTake);
-        stepper_release(&stepper);
+        // stepper_rotate_steps(&stepper, stepsToTake);
+        // stepper_release(&stepper);
         sleep_ms(500);
     }
 
