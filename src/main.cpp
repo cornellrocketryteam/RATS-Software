@@ -23,10 +23,10 @@
 #include "data.hpp"
 #include "formulas.hpp"
 #include "pico/stdlib.h"
-#include "tusb.h"
 #include "pins.hpp"
 #include "rfm/pico_hal.h"
 #include "stepper.h"
+#include "tusb.h"
 #include <RadioLib.h>
 #include <cstring>
 #include <iostream>
