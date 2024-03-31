@@ -13,7 +13,7 @@
  */
 
 // Uncomment if you want debug information about signal strength and motor movements
-#define DEBUG
+// #define DEBUG
 
 // #include <Stepper.h>
 // #include <Servo.h>
@@ -23,6 +23,7 @@
 #include "data.hpp"
 #include "formulas.hpp"
 #include "pico/stdlib.h"
+#include "tusb.h"
 #include "pins.hpp"
 #include "rfm/pico_hal.h"
 #include "stepper.h"
@@ -71,6 +72,10 @@ uint8_t speed = 60;
 
 int main() {
     stdio_init_all();
+
+    while (!tud_cdc_connected()) {
+        sleep_ms(500);
+    }
 
     // Initialize servo
     servo_init();
