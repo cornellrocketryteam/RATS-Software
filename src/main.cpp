@@ -196,7 +196,6 @@ int main() {
             // switch to backup data
             int dataIndex = (to_ms_since_boot(get_absolute_time()) - launchTime) / 500;
             rockElev = alt_data[dataIndex];
-
         }
 
         // convert coordinates to angles
