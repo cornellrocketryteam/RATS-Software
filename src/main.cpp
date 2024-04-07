@@ -52,8 +52,8 @@ PicoHal *hal = new PicoHal(SPI_PORT, SPI_MISO, SPI_MOSI, SPI_SCK, 8000000);
 
 SX1276 radio = new Module(hal, RX_CS, RX_DIO0, RADIOLIB_NC, RX_DIO1);
 
-const int msglen = 61;
-const uint8_t ECC_LENGTH = 50;
+const int msglen = 86;
+const uint8_t ECC_LENGTH = 25;
 char encoded[msglen + ECC_LENGTH];
 char repaired[msglen];
 
@@ -136,7 +136,13 @@ int main() {
             printf("\n");
 #endif
 
-            rs.Decode(encoded, repaired);
+            if (!rs.Decode(encoded, repaired)) {
+#ifdef DEBUG
+                printf("Decoding succeeded!\n");
+#endif
+            } else {
+                printf("Decoding failed!\n");
+            }
             std::string result = repaired;
 #ifdef DEBUG
             printf("Result: \"");
@@ -173,7 +179,9 @@ int main() {
 
         } else if (state == RADIOLIB_ERR_RX_TIMEOUT) {
             // timeout occurred while waiting for a packet
+#ifdef DEBUG
             printf("timeout!\n");
+#endif
         } else if (state == RADIOLIB_ERR_CRC_MISMATCH) {
             // packet was received, but is malformed
             printf("CRC error!\n");
@@ -189,8 +197,6 @@ int main() {
             int dataIndex = (to_ms_since_boot(get_absolute_time()) - launchTime) / 500;
             rockElev = alt_data[dataIndex];
 
-        } else if (!recPacket) {
-            break;
         }
 
         // convert coordinates to angles
