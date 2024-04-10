@@ -111,6 +111,12 @@ int main() {
         printf("failed, code %d\n", state);
         return 1;
     }
+
+    state = radio.setFrequency(900);
+    if (state != RADIOLIB_ERR_NONE) {
+        printf("Set Frequency failed, code %d\n", state);
+        return 1;
+    }
 #ifdef DEBUG
     printf("success!\n");
 #endif
@@ -124,7 +130,7 @@ int main() {
         uint8_t encoded[msglen + ECC_LENGTH];
         int state = radio.receive(encoded, msglen + ECC_LENGTH);
 
-        if (state == RADIOLIB_ERR_NONE) {
+        if (state == RADIOLIB_ERR_NONE || state == RADIOLIB_ERR_CRC_MISMATCH) {
 #ifdef DEBUG
             // packet was successfully received
             printf("success!");
@@ -182,9 +188,9 @@ int main() {
 #ifdef DEBUG
             printf("timeout!\n");
 #endif
-        } else if (state == RADIOLIB_ERR_CRC_MISMATCH) {
-            // packet was received, but is malformed
-            printf("CRC error!\n");
+            // } else if (state == RADIOLIB_ERR_CRC_MISMATCH) {
+            //     // packet was received, but is malformed
+            //     printf("CRC error!\n");
         } else {
             // some other error occurred
             printf("failed, code %d\n", state);
