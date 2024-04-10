@@ -130,7 +130,7 @@ int main() {
         uint8_t encoded[msglen + ECC_LENGTH];
         int state = radio.receive(encoded, msglen + ECC_LENGTH);
 
-        if (state == RADIOLIB_ERR_NONE || state == RADIOLIB_ERR_CRC_MISMATCH) {
+        if (state == RADIOLIB_ERR_NONE || state == RADIOLIB_ERR_CRC_MISMATCH || state == RADIOLIB_ERR_LORA_HEADER_DAMAGED) {
 #ifdef DEBUG
             // packet was successfully received
             printf("success!");
