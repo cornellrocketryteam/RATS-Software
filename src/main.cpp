@@ -201,9 +201,8 @@ int main() {
             memcpy(&rockLong, repaired + 17, 4); // Longitude field
 #else
             // Send data to Ground Station
-            printf("%s\n", received);
-            // for(uint i = 0; i < msglen; i++) {printf("%c", received[i]);}
-            // printf("\n");
+            for(uint i = 0; i < msglen; i++) {printf("%c", received[i]);}
+            printf("\n");
 
             // Extract values
             memcpy(&rockElev, received + 9, 4);  // Altitude field
