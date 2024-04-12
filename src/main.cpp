@@ -204,7 +204,8 @@ int main() {
             for (uint i = 0; i < msglen; i++) {
                 printf("%c", received[i]);
             }
-            printf("\n");
+            // Comment out newline for now
+            // printf("\n");
 
             // Extract values
             memcpy(&rockElev, received + 9, 4);  // Altitude field
@@ -222,7 +223,9 @@ int main() {
             //     printf("CRC error!\n");
         } else {
             // some other error occurred
+#ifdef DEBUG
             printf("failed, code %d\n", state);
+#endif
         }
 
         if (launched && launchTime == 0) {
