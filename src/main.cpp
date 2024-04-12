@@ -13,7 +13,10 @@
  */
 
 // Uncomment if you want debug information about signal strength and motor movements
-// #define DEBUG
+#define DEBUG
+
+// Flag to enable forward error correction
+// #define FEC
 
 // #include <Stepper.h>
 // #include <Servo.h>
@@ -126,11 +129,20 @@ int main() {
 #ifdef DEBUG
         printf("[SX1276] Waiting for incoming transmission ... ");
 #endif
-
+#ifdef FEC
         uint8_t encoded[msglen + ECC_LENGTH];
         int state = radio.receive(encoded, msglen + ECC_LENGTH);
+#else
+        uint8_t received[msglen];
+        int state = radio.receive(received, msglen);
+#endif
 
+#ifdef FEC
         if (state == RADIOLIB_ERR_NONE || state == RADIOLIB_ERR_CRC_MISMATCH || state == RADIOLIB_ERR_LORA_HEADER_DAMAGED) {
+#else
+        if (state == RADIOLIB_ERR_NONE) {
+#endif
+
 #ifdef DEBUG
             // packet was successfully received
             printf("success!");
@@ -141,7 +153,7 @@ int main() {
             }
             printf("\n");
 #endif
-
+#ifdef FEC
             if (!rs.Decode(encoded, repaired)) {
 #ifdef DEBUG
                 printf("Decoding succeeded!\n");
@@ -150,6 +162,10 @@ int main() {
                 printf("Decoding failed!\n");
             }
             std::string result = repaired;
+#else
+            std::string result = (char*)received;
+#endif
+
 #ifdef DEBUG
             printf("Result: \"");
             for (int i = 0; i < msglen; i++)
@@ -175,6 +191,7 @@ int main() {
             printf(" Hz\n");
 #endif
 
+#ifdef FEC
             // Send data to Ground Station
             printf("%s", repaired);
 
@@ -182,6 +199,17 @@ int main() {
             memcpy(&rockElev, repaired + 9, 4);  // Altitude field
             memcpy(&rockLat, repaired + 13, 4);  // Latitude field
             memcpy(&rockLong, repaired + 17, 4); // Longitude field
+#else
+            // Send data to Ground Station
+            printf("%s\n", received);
+            // for(uint i = 0; i < msglen; i++) {printf("%c", received[i]);}
+            // printf("\n");
+
+            // Extract values
+            memcpy(&rockElev, received + 9, 4);  // Altitude field
+            memcpy(&rockLat, received + 13, 4);  // Latitude field
+            memcpy(&rockLong, received + 17, 4); // Longitude field
+#endif
 
         } else if (state == RADIOLIB_ERR_RX_TIMEOUT) {
             // timeout occurred while waiting for a packet
@@ -239,7 +267,6 @@ int main() {
         servo_move_to(12, 90 - asc);
         // stepper_rotate_steps(&stepper, stepsToTake);
         // stepper_release(&stepper);
-        sleep_ms(500);
     }
 
     return 0;
