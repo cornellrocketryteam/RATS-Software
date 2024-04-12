@@ -163,7 +163,7 @@ int main() {
             }
             std::string result = repaired;
 #else
-            std::string result = (char*)received;
+            std::string result = (char *)received;
 #endif
 
 #ifdef DEBUG
@@ -201,7 +201,9 @@ int main() {
             memcpy(&rockLong, repaired + 17, 4); // Longitude field
 #else
             // Send data to Ground Station
-            for(uint i = 0; i < msglen; i++) {printf("%c", received[i]);}
+            for (uint i = 0; i < msglen; i++) {
+                printf("%c", received[i]);
+            }
             printf("\n");
 
             // Extract values
