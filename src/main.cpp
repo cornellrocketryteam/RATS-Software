@@ -13,15 +13,11 @@
  */
 
 // Uncomment if you want debug information about signal strength and motor movements
-#define DEBUG
+// #define DEBUG
 
-// Flag to enable forward error correction
-// #define FEC
+// #define STEPPER
+// #define SERVO
 
-// #include <Stepper.h>
-// #include <Servo.h>
-// #include <ArduinoJson.h>
-#include "../lib/RS-FEC.h"
 #include "../lib/pico-servo/include/pico_servo.h"
 #include "data.hpp"
 #include "formulas.hpp"
@@ -50,19 +46,24 @@ float rockElev;
 float rockLat;
 float rockLong;
 
+// Radio settings
+float freq = 900;  // MHz
+float bw = 125;    // kHz
+uint8_t sf = 7;    // Between 7 and 12
+uint8_t cr = 8;    // Between 5 and 8. 4/8 coding ration - one redundancy bit for every data bit
+uint8_t sw = 0x12; // Sync-word (defines network) Default is 18
+int8_t pwr = 17;   // Between 2 and 17
+
 // RadioLib setup
 PicoHal *hal = new PicoHal(SPI_PORT, SPI_MISO, SPI_MOSI, SPI_SCK, 8000000);
 
 SX1276 radio = new Module(hal, RX_CS, RX_DIO0, RADIOLIB_NC, RX_DIO1);
 
 const int msglen = 86;
-const uint8_t ECC_LENGTH = 25;
-char encoded[msglen + ECC_LENGTH];
-char repaired[msglen];
-
-RS::ReedSolomon<msglen, ECC_LENGTH> rs;
 
 // initialize the stepper library on pins 7 through 10:
+
+#ifdef STEPPER
 stepper_t stepper;
 const uint8_t stepper_pin_1A = 7;
 const uint8_t stepper_pin_1B = 8;
@@ -72,6 +73,7 @@ const uint16_t stepper_steps_per_revolution = 200;
 const uint16_t platformStepsPerRev = 1320;
 const stepper_mode_t stepping_mode = single;
 uint8_t speed = 60;
+#endif // STEPPER
 
 int main() {
     stdio_init_all();
@@ -80,6 +82,7 @@ int main() {
         sleep_ms(500);
     }
 
+#ifdef SERVO
     // Initialize servo
     servo_init();
     servo_clock_auto();
@@ -89,10 +92,13 @@ int main() {
     servo_attach(12);
     // Set servo to 0 degrees
     servo_move_to(12, 0);
+#endif // SERVO
 
+#ifdef STEPPER
     // Initialize stepper
     stepper_init(&stepper, stepper_pin_1A, stepper_pin_1B, stepper_pin_2A, stepper_pin_2B, stepper_steps_per_revolution, stepping_mode);
     stepper_set_speed_rpm(&stepper, speed);
+#endif // STEPPER
 
     gpio_init(RX_CS);
     gpio_set_dir(RX_CS, GPIO_OUT);
@@ -107,41 +113,27 @@ int main() {
 
 #ifdef DEBUG
     printf("[SX1276] Initializing ... ");
-#endif
+#endif // DEBUG
 
-    int state = radio.begin();
+    int state = radio.begin(freq, bw, sf, cr, sw, pwr);
     if (state != RADIOLIB_ERR_NONE) {
         printf("failed, code %d\n", state);
         return 1;
     }
 
-    state = radio.setFrequency(900);
-    if (state != RADIOLIB_ERR_NONE) {
-        printf("Set Frequency failed, code %d\n", state);
-        return 1;
-    }
 #ifdef DEBUG
     printf("success!\n");
-#endif
+#endif // DEBUG
 
     while (true) {
         // receive a packet
 #ifdef DEBUG
         printf("[SX1276] Waiting for incoming transmission ... ");
-#endif
-#ifdef FEC
-        uint8_t encoded[msglen + ECC_LENGTH];
-        int state = radio.receive(encoded, msglen + ECC_LENGTH);
-#else
+#endif // DEBUG
         uint8_t received[msglen];
         int state = radio.receive(received, msglen);
-#endif
 
-#ifdef FEC
-        if (state == RADIOLIB_ERR_NONE || state == RADIOLIB_ERR_CRC_MISMATCH || state == RADIOLIB_ERR_LORA_HEADER_DAMAGED) {
-#else
         if (state == RADIOLIB_ERR_NONE) {
-#endif
 
 #ifdef DEBUG
             // packet was successfully received
@@ -152,19 +144,8 @@ int main() {
                 printf("%c", encoded[i]);
             }
             printf("\n");
-#endif
-#ifdef FEC
-            if (!rs.Decode(encoded, repaired)) {
-#ifdef DEBUG
-                printf("Decoding succeeded!\n");
-#endif
-            } else {
-                printf("Decoding failed!\n");
-            }
-            std::string result = repaired;
-#else
+#endif // DEBUG
             std::string result = (char *)received;
-#endif
 
 #ifdef DEBUG
             printf("Result: \"");
@@ -189,43 +170,32 @@ int main() {
             printf("[SX1278] Frequency error:\t");
             printf("%f", radio.getFrequencyError());
             printf(" Hz\n");
-#endif
-
-#ifdef FEC
-            // Send data to Ground Station
-            printf("%s", repaired);
-
-            // Extract values
-            memcpy(&rockElev, repaired + 9, 4);  // Altitude field
-            memcpy(&rockLat, repaired + 13, 4);  // Latitude field
-            memcpy(&rockLong, repaired + 17, 4); // Longitude field
-#else
-            // Send data to Ground Station
+#endif // DEBUG
+       // Send data to Ground Station
             for (uint i = 0; i < msglen; i++) {
                 printf("%c", received[i]);
             }
-            // Comment out newline for now
-            // printf("\n");
+
+            // TODO(Zach) Check GPS valid flag
 
             // Extract values
             memcpy(&rockElev, received + 9, 4);  // Altitude field
             memcpy(&rockLat, received + 13, 4);  // Latitude field
             memcpy(&rockLong, received + 17, 4); // Longitude field
-#endif
 
         } else if (state == RADIOLIB_ERR_RX_TIMEOUT) {
             // timeout occurred while waiting for a packet
 #ifdef DEBUG
             printf("timeout!\n");
-#endif
-            // } else if (state == RADIOLIB_ERR_CRC_MISMATCH) {
-            //     // packet was received, but is malformed
-            //     printf("CRC error!\n");
+#endif // DEBUG
+       // } else if (state == RADIOLIB_ERR_CRC_MISMATCH) {
+       //     // packet was received, but is malformed
+       //     printf("CRC error!\n");
         } else {
             // some other error occurred
 #ifdef DEBUG
             printf("failed, code %d\n", state);
-#endif
+#endif // DEBUG
         }
 
         if (launched && launchTime == 0) {
@@ -242,35 +212,40 @@ int main() {
         printf("Distance: ");
         printf("%d", dist);
         printf(" km\n");
-#endif
+#endif // DEBUG
         double bear = bearing(rockLat, rockLong, groundLat, groundLong);
 #ifdef DEBUG
         printf("Bearing: ");
         printf("%d", bear);
         printf(" degrees\n");
-#endif
+#endif // DEBUG
         double asc = ascension(rockElev, groundElev, dist);
 #ifdef DEBUG
         printf("Ascension: ");
         printf("%d", asc);
         printf(" degrees\n");
-#endif
-        // // Disabled since we removed the stepper motor
-        // int target = -1 * (bear / 360) * platformStepsPerRev;
-        // int stepsToTake = target - stepPos;
-        // if (target - stepPos > (platformStepsPerRev / 2)) {
-        //   stepsToTake = (target - stepPos) - platformStepsPerRev;
-        // } else if (target - stepPos < -(platformStepsPerRev / 2)) {
-        //   stepsToTake = (target - stepPos) + platformStepsPerRev;
-        // } else {
-        //   stepsToTake = target - stepPos;
-        // }
-        // stepPos = target;
+#endif // DEBUG
 
+#ifdef STEPPER
+        int target = -1 * (bear / 360) * platformStepsPerRev;
+        int stepsToTake = target - stepPos;
+        if (target - stepPos > (platformStepsPerRev / 2)) {
+            stepsToTake = (target - stepPos) - platformStepsPerRev;
+        } else if (target - stepPos < -(platformStepsPerRev / 2)) {
+            stepsToTake = (target - stepPos) + platformStepsPerRev;
+        } else {
+            stepsToTake = target - stepPos;
+        }
+        stepPos = target;
+#endif // STEPPER
+#ifdef SERVO
         // aim antenna
         servo_move_to(12, 90 - asc);
-        // stepper_rotate_steps(&stepper, stepsToTake);
-        // stepper_release(&stepper);
+#endif // SERVO
+#ifdef STEPPER
+        stepper_rotate_steps(&stepper, stepsToTake);
+        stepper_release(&stepper);
+#endif // STEPPER
     }
 
     return 0;
