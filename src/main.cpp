@@ -13,7 +13,7 @@
  */
 
 // Uncomment if you want debug information about signal strength and motor movements
-// #define DEBUG
+// #define DEBUG 
 
 // #define STEPPER
 // #define SERVO
@@ -47,7 +47,7 @@ float rockLat;
 float rockLong;
 
 // Radio settings
-float freq = 900;  // MHz
+float freq = 915;  // MHz
 float bw = 125;    // kHz
 uint8_t sf = 7;    // Between 7 and 12
 uint8_t cr = 8;    // Between 5 and 8. 4/8 coding ration - one redundancy bit for every data bit
@@ -138,20 +138,11 @@ int main() {
 #ifdef DEBUG
             // packet was successfully received
             printf("success!");
-            // print the data of the packet
-            printf("\n[SX1276] Raw Data Length: %d\n[SX1276] Raw Data: ", sizeof(encoded));
-            for (uint i = 0; i < sizeof(encoded); i++) {
-                printf("%c", encoded[i]);
-            }
             printf("\n");
 #endif // DEBUG
             std::string result = (char *)received;
 
 #ifdef DEBUG
-            printf("Result: \"");
-            for (int i = 0; i < msglen; i++)
-                printf("%c", (char)repaired[i]);
-            printf("\"\n");
 
             // print the RSSI (Received Signal Strength Indicator)
             // of the last received packet
