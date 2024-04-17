@@ -52,7 +52,7 @@ float bw = 125;    // kHz
 uint8_t sf = 7;    // Between 7 and 12
 uint8_t cr = 8;    // Between 5 and 8. 4/8 coding ration - one redundancy bit for every data bit
 uint8_t sw = 0x12; // Sync-word (defines network) Default is 18
-int8_t pwr = 17;   // Between 2 and 17
+int8_t pwr = 20;   // Between 2 and 17 or 20 for max power
 
 // RadioLib setup
 PicoHal *hal = new PicoHal(SPI_PORT, SPI_MISO, SPI_MOSI, SPI_SCK, 8000000);
