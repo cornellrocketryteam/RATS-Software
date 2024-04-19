@@ -57,7 +57,7 @@ float freq = 915;  // MHz
 float bw = 125;    // kHz
 uint8_t sf = 7;    // Between 7 and 12
 uint8_t cr = 8;    // Between 5 and 8. 4/8 coding ration - one redundancy bit for every data bit
-uint8_t sw = 0x12; // Sync-word (defines network) Default is 18
+uint8_t sw = 0x16; // Sync-word (defines network) Default is 0d18
 int8_t pwr = 20;   // Between 2 and 17 or 20 for max power
 
 // RadioLib setup
@@ -154,10 +154,10 @@ int main() {
             float freqErr = radio.getFrequencyError(true);
 
             // Package radio metadata
-            char radio_metadata[sizeof(float)*3];
+            char radio_metadata[sizeof(float) * 3];
             memcpy(radio_metadata, &rssi, sizeof(rssi));
-            memcpy(radio_metadata+sizeof(float), &snr, sizeof(snr));
-            memcpy(radio_metadata+(2*sizeof(float)), &snr, sizeof(snr));
+            memcpy(radio_metadata + sizeof(float), &snr, sizeof(snr));
+            memcpy(radio_metadata + (2 * sizeof(float)), &snr, sizeof(snr));
 
 #ifdef DEBUG
 
