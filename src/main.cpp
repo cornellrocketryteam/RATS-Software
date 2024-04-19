@@ -13,7 +13,7 @@
  */
 
 // Uncomment if you want debug information about signal strength and motor movements
-#define DEBUG
+// #define DEBUG
 
 // #define STEPPER
 // #define SERVO
