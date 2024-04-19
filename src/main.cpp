@@ -149,20 +149,28 @@ int main() {
             std::string result = (char *)received;
 
             // Automatically Correct Frequency Error
+            float rssi = radio.getRSSI();
+            float snr = radio.getSNR();
             float freqErr = radio.getFrequencyError(true);
+
+            // Package radio metadata
+            char radio_metadata[sizeof(float)*3];
+            memcpy(radio_metadata, &rssi, sizeof(rssi));
+            memcpy(radio_metadata+sizeof(float), &snr, sizeof(snr));
+            memcpy(radio_metadata+(2*sizeof(float)), &snr, sizeof(snr));
 
 #ifdef DEBUG
 
             // print the RSSI (Received Signal Strength Indicator)
             // of the last received packet
             printf("[SX1278] RSSI:\t\t\t");
-            printf("%f", radio.getRSSI());
+            printf("%f", rssi);
             printf(" dBm\n");
 
             // print the SNR (Signal-to-Noise Ratio)
             // of the last received packet
             printf("[SX1278] SNR:\t\t\t");
-            printf("%f", radio.getSNR());
+            printf("%f", snr);
             printf(" dB\n");
 
             // print frequency error
@@ -174,6 +182,9 @@ int main() {
        // Send data to Ground Station
             for (uint i = 0; i < msglen; i++) {
                 printf("%c", received[i]);
+            }
+            for (uint i = 0; i < sizeof(radio_metadata); i++) {
+                printf("%c", radio_metadata[i]);
             }
 
             // TODO(Zach) Check GPS valid flag
