@@ -13,7 +13,7 @@
  */
 
 // Uncomment if you want debug information about signal strength and motor movements
-// #define DEBUG
+#define DEBUG
 
 // #define STEPPER
 // #define SERVO
@@ -142,6 +142,9 @@ int main() {
 #endif // DEBUG
             std::string result = (char *)received;
 
+            // Automatically Correct Frequency Error
+            float freqErr = radio.getFrequencyError(true);
+
 #ifdef DEBUG
 
             // print the RSSI (Received Signal Strength Indicator)
@@ -159,7 +162,7 @@ int main() {
             // print frequency error
             // of the last received packet
             printf("[SX1278] Frequency error:\t");
-            printf("%f", radio.getFrequencyError());
+            printf("%f", freqErr);
             printf(" Hz\n");
 #endif // DEBUG
        // Send data to Ground Station
@@ -179,9 +182,18 @@ int main() {
 #ifdef DEBUG
             printf("timeout!\n");
 #endif // DEBUG
-       // } else if (state == RADIOLIB_ERR_CRC_MISMATCH) {
-       //     // packet was received, but is malformed
-       //     printf("CRC error!\n");
+        } else if (state == RADIOLIB_ERR_CRC_MISMATCH) {
+            // packet was received, but is malformed
+#ifdef DEBUG
+            printf("CRC error!\n");
+#endif // DEBUG
+        } else if (state == RADIOLIB_ERR_SPI_WRITE_FAILED) {
+            // Likely something on board shorted. Restart radio module
+            int restart_state = radio.begin(freq, bw, sf, cr, sw, pwr);
+            while (restart_state != RADIOLIB_ERR_NONE) {
+                printf("failed, code %d\n", state);
+                restart_state = radio.begin(freq, bw, sf, cr, sw, pwr);
+            }
         } else {
             // some other error occurred
 #ifdef DEBUG
