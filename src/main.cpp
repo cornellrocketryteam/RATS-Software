@@ -35,6 +35,12 @@
 #include "../lib/pico-servo/src/pico_servo.c"
 #include "../lib/pico-stepper/lib/stepper.c"
 
+#define ALTITUDE_OFFSET 9
+#define LATITUDE_OFFSET 13
+#define LONGITUDE_OFFSET 17
+
+#define SERVO_PIN 12
+
 bool launched = false;
 bool recPacket = false;
 long launchTime = 0;
@@ -89,9 +95,9 @@ int main() {
     // Set duty cycle bounds in us
     servo_set_bounds(500, 2500);
     // Attach to pin 12
-    servo_attach(12);
+    servo_attach(SERVO_PIN);
     // Set servo to 0 degrees
-    servo_move_to(12, 0);
+    servo_move_to(SERVO_PIN, 0);
 #endif // SERVO
 
 #ifdef STEPPER
@@ -173,9 +179,9 @@ int main() {
             // TODO(Zach) Check GPS valid flag
 
             // Extract values
-            memcpy(&rockElev, received + 9, 4);  // Altitude field
-            memcpy(&rockLat, received + 13, 4);  // Latitude field
-            memcpy(&rockLong, received + 17, 4); // Longitude field
+            memcpy(&rockElev, received + ALTITUDE_OFFSET, sizeof(float));  // Altitude field
+            memcpy(&rockLat, received + LATITUDE_OFFSET, sizeof(float));   // Latitude field
+            memcpy(&rockLong, received + LONGITUDE_OFFSET, sizeof(float)); // Longitude field
 
         } else if (state == RADIOLIB_ERR_RX_TIMEOUT) {
             // timeout occurred while waiting for a packet
@@ -243,7 +249,7 @@ int main() {
 #endif // STEPPER
 #ifdef SERVO
         // aim antenna
-        servo_move_to(12, 90 - asc);
+        servo_move_to(SERVO_PIN, 90 - asc);
 #endif // SERVO
 #ifdef STEPPER
         stepper_rotate_steps(&stepper, stepsToTake);
