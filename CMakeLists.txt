@@ -1,5 +1,21 @@
 cmake_minimum_required(VERSION 3.22)
 
+OPTION(SERVO "Enables Actuating the Servo" OFF) # Enabled by default
+OPTION(STEPPER "Enables Rotating the Stepper" OFF) # Enabled by default
+OPTION(DEBUG "Prints debug information" OFF) # Disabled by default
+
+IF(SERVO)
+    ADD_DEFINITIONS(-DSERVO)
+ENDIF(SERVO)
+
+IF(STEPPER)
+    ADD_DEFINITIONS(-DSTEPPER)
+ENDIF(STEPPER)
+
+IF(DEBUG)
+    ADD_DEFINITIONS(-DDEBUG)
+ENDIF(DEBUG)
+
 # Pull in SDK (must be before project)
 include(lib/pico-sdk/pico_sdk_init.cmake)
 
