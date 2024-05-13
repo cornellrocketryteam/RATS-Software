@@ -21,10 +21,8 @@
 #include "formulas.hpp"
 #include "radio.hpp"
 #include "pico/stdlib.h"
-#include "rfm/pico_hal.h"
 #include "stepper.h"
 #include "tusb.h"
-#include <RadioLib.h>
 #include <cstring>
 #include <iostream>
 #include <stdio.h>
@@ -80,7 +78,6 @@ int main() {
     char radio_metadata[sizeof(float) * 3];
 
     while (true) {
-        printf("New loop");
         // receive a packet
         if (!radio.receive(received, radio_metadata)) {
             std::string result = (char *)received;
