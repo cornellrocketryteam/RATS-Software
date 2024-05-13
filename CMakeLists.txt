@@ -1,16 +1,11 @@
 cmake_minimum_required(VERSION 3.22)
 
-OPTION(SERVO "Enables Actuating the Servo" OFF) # Enabled by default
-OPTION(STEPPER "Enables Rotating the Stepper" OFF) # Enabled by default
+OPTION(MOVER "Enables Rotating the Stepper and Servo" OFF) # Disabled by default
 OPTION(DEBUG "Prints debug information" OFF) # Disabled by default
 
-IF(SERVO)
-    ADD_DEFINITIONS(-DSERVO)
-ENDIF(SERVO)
-
-IF(STEPPER)
-    ADD_DEFINITIONS(-DSTEPPER)
-ENDIF(STEPPER)
+IF(MOVER)
+    ADD_DEFINITIONS(-DMOVER)
+ENDIF(MOVER)
 
 IF(DEBUG)
     ADD_DEFINITIONS(-DDEBUG)
@@ -38,6 +33,7 @@ set(SOURCES
     src/main.cpp
     src/formulas.cpp
     src/radio.cpp
+    src/mover.cpp
     lib/pico-stepper/lib/stepper.c
     lib/pico-servo/include/pico_servo.h
 )
