@@ -76,13 +76,11 @@ int main() {
             memcpy(&rockElev, received + constants::ALTITUDE_OFFSET, sizeof(float));  // Altitude field
             memcpy(&rockLat, received + constants::LATITUDE_OFFSET, sizeof(float));   // Latitude field
             memcpy(&rockLong, received + constants::LONGITUDE_OFFSET, sizeof(float)); // Longitude field
-
-            
-#ifdef MOVER
-            // Move
-            mover.move(rockElev, rockLat, rockLong);
-#endif // Mover
         }
+#ifdef MOVER
+        // Move
+        mover.move(rockElev, rockLat, rockLong);
+#endif // Mover
     }
 
     return 0;
