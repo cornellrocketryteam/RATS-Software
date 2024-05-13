@@ -1,3 +1,5 @@
+#define SPI_PORT spi0
+
 #include "stepper.h"
 
 namespace constants {
@@ -24,6 +26,15 @@ namespace constants {
     const float GROUND_ELEV = 0.0;
     const float GROUND_LAT = 0.0;
     const float GROUND_LONG = 0.0;
+
+    const uint8_t SPI_MISO = 4;
+    const uint8_t SPI_MOSI = 3;
+    const uint8_t SPI_SCK = 2;
+
+    const uint8_t RX_CS = 5;
+    const uint8_t RX_RST = 0;
+    const uint8_t RX_DIO0 = 13;
+    const uint8_t RX_DIO1 = 14;
 
     // Radio
     const float FREQ = 915;  // MHz
