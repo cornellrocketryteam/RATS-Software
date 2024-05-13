@@ -39,6 +39,7 @@ add_compile_options(
 set(SOURCES
     src/main.cpp
     src/formulas.cpp
+    src/radio.cpp
     lib/pico-stepper/lib/stepper.c
     lib/pico-servo/include/pico_servo.h
 )

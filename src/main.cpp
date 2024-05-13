@@ -12,16 +12,15 @@
 
  */
 
-#define SERVO
-#define STEPPER
-#define DEBUG
+// #define SERVO
+// #define STEPPER
+// #define DEBUG
 
 #include "../lib/pico-servo/include/pico_servo.h"
-#include "constants.hpp"
 #include "data.hpp"
 #include "formulas.hpp"
+#include "radio.hpp"
 #include "pico/stdlib.h"
-#include "pins.hpp"
 #include "rfm/pico_hal.h"
 #include "stepper.h"
 #include "tusb.h"
@@ -43,11 +42,7 @@ float rockLat;
 float rockLong;
 
 // RadioLib setup
-PicoHal *hal = new PicoHal(SPI_PORT, SPI_MISO, SPI_MOSI, SPI_SCK, 8000000);
-
-SX1276 radio = new Module(hal, RX_CS, RX_DIO0, RADIOLIB_NC, RX_DIO1);
-
-// initialize the stepper library on pins 7 through 10:
+Radio radio;
 
 #ifdef STEPPER
 stepper_t stepper;
@@ -78,80 +73,19 @@ int main() {
     stepper_set_speed_rpm(&stepper, constants::SPEED);
 #endif // STEPPER
 
-    gpio_init(RX_CS);
-    gpio_set_dir(RX_CS, GPIO_OUT);
-
-    gpio_init(RX_RST);
-    gpio_set_dir(RX_RST, GPIO_OUT);
-
-    sleep_ms(10);
-    gpio_put(RX_RST, 0);
-    sleep_ms(10);
-    gpio_put(RX_RST, 1);
-
-#ifdef DEBUG
-    printf("[SX1276] Initializing ... ");
-#endif // DEBUG
-
-    int state = radio.begin(constants::FREQ, constants::BW, constants::SF, constants::CR, constants::SW, constants::PWR);
-    if (state != RADIOLIB_ERR_NONE) {
-        printf("failed, code %d\n", state);
+    if (radio.init()) {
         return 1;
-    }
-
-#ifdef DEBUG
-    printf("success!\n");
-#endif // DEBUG
+    };
+    char received[constants::MSG_LEN];
+    char radio_metadata[sizeof(float) * 3];
 
     while (true) {
+        printf("New loop");
         // receive a packet
-#ifdef DEBUG
-        printf("[SX1276] Waiting for incoming transmission ... ");
-#endif // DEBUG
-        uint8_t received[constants::MSG_LEN];
-        int state = radio.receive(received, constants::MSG_LEN);
-
-        if (state == RADIOLIB_ERR_NONE) {
-
-#ifdef DEBUG
-            // packet was successfully received
-            printf("success!");
-            printf("\n");
-#endif // DEBUG
+        if (!radio.receive(received, radio_metadata)) {
             std::string result = (char *)received;
 
-            // Automatically Correct Frequency Error
-            float rssi = radio.getRSSI();
-            float snr = radio.getSNR();
-            float freqErr = radio.getFrequencyError(true);
-
-            // Package radio metadata
-            char radio_metadata[sizeof(float) * 3];
-            memcpy(radio_metadata, &rssi, sizeof(rssi));
-            memcpy(radio_metadata + sizeof(float), &snr, sizeof(snr));
-            memcpy(radio_metadata + (2 * sizeof(float)), &snr, sizeof(snr));
-
-#ifdef DEBUG
-
-            // print the RSSI (Received Signal Strength Indicator)
-            // of the last received packet
-            printf("[SX1278] RSSI:\t\t\t");
-            printf("%f", rssi);
-            printf(" dBm\n");
-
-            // print the SNR (Signal-to-Noise Ratio)
-            // of the last received packet
-            printf("[SX1278] SNR:\t\t\t");
-            printf("%f", snr);
-            printf(" dB\n");
-
-            // print frequency error
-            // of the last received packet
-            printf("[SX1278] Frequency error:\t");
-            printf("%f", freqErr);
-            printf(" Hz\n");
-#endif // DEBUG
-       // Send data to Ground Station
+            // Send data to Ground Station
             for (uint i = 0; i < constants::MSG_LEN; i++) {
                 printf("%c", received[i]);
             }
@@ -165,31 +99,9 @@ int main() {
             memcpy(&rockElev, received + constants::ALTITUDE_OFFSET, sizeof(float));  // Altitude field
             memcpy(&rockLat, received + constants::LATITUDE_OFFSET, sizeof(float));   // Latitude field
             memcpy(&rockLong, received + constants::LONGITUDE_OFFSET, sizeof(float)); // Longitude field
-
-        } else if (state == RADIOLIB_ERR_RX_TIMEOUT) {
-            // timeout occurred while waiting for a packet
-#ifdef DEBUG
-            printf("timeout!\n");
-#endif // DEBUG
-        } else if (state == RADIOLIB_ERR_CRC_MISMATCH) {
-            // packet was received, but is malformed
-#ifdef DEBUG
-            printf("CRC error!\n");
-#endif // DEBUG
-        } else if (state == RADIOLIB_ERR_SPI_WRITE_FAILED) {
-            // Likely something on board shorted. Restart radio module
-            int restart_state = radio.begin(constants::FREQ, constants::BW, constants::SF, constants::CR, constants::SW, constants::PWR);
-            while (restart_state != RADIOLIB_ERR_NONE) {
-                printf("failed, code %d\n", state);
-                restart_state = radio.begin(constants::FREQ, constants::BW, constants::SF, constants::CR, constants::SW, constants::PWR);
-            }
-        } else {
-            // some other error occurred
-#ifdef DEBUG
-            printf("failed, code %d\n", state);
-#endif // DEBUG
         }
 
+        // Switch to backup data if needed
         if (launched && launchTime == 0) {
             launchTime = to_ms_since_boot(get_absolute_time());
         } else if (launched && !recPacket) {
