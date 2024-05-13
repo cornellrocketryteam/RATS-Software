@@ -19,8 +19,8 @@
 #include "../lib/pico-servo/include/pico_servo.h"
 #include "data.hpp"
 #include "formulas.hpp"
-#include "radio.hpp"
 #include "pico/stdlib.h"
+#include "radio.hpp"
 #include "stepper.h"
 #include "tusb.h"
 #include <cstring>

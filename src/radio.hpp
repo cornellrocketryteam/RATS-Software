@@ -1,11 +1,11 @@
-#include <RadioLib.h>
-#include "rfm/pico_hal.h"
 #include "constants.hpp"
+#include "rfm/pico_hal.h"
+#include <RadioLib.h>
 
 class Radio {
 public:
     int init();
-    int receive(char* received, char* metadata);
+    int receive(char *received, char *metadata);
 
 private:
     PicoHal *hal = new PicoHal(SPI_PORT, constants::SPI_MISO, constants::SPI_MOSI, constants::SPI_SCK, 8000000);

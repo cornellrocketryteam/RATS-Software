@@ -2,7 +2,6 @@
 #include "rfm/pico_hal.h"
 #include <RadioLib.h>
 
-
 int Radio::init() {
     gpio_init(constants::RX_CS);
     gpio_set_dir(constants::RX_CS, GPIO_OUT);
@@ -32,13 +31,13 @@ int Radio::init() {
     return 0;
 }
 
-int Radio::receive(char* received, char* metadata) {
-    
+int Radio::receive(char *received, char *metadata) {
+
 #ifdef DEBUG
     printf("[SX1276] Waiting for incoming transmission ... ");
 #endif // DEBUG
 
-    int state = radio.receive((uint8_t*)received, constants::MSG_LEN);
+    int state = radio.receive((uint8_t *)received, constants::MSG_LEN);
     if (state == RADIOLIB_ERR_NONE) {
 
 #ifdef DEBUG
@@ -102,4 +101,3 @@ int Radio::receive(char* received, char* metadata) {
     }
     return -1;
 }
-
