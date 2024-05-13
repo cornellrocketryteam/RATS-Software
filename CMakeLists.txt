@@ -33,8 +33,6 @@ add_compile_options(
     -Wno-unused-function
 )
 
-# add_definitions(-DVERBOSE -DDEBUG)
-
 # Add source files from src/
 set(SOURCES
     src/main.cpp
