@@ -1,9 +1,9 @@
 #include "mover.hpp"
-#include "pico/stdlib.h"
+#include "../lib/pico-servo/include/pico_servo.h"
 #include "constants.hpp"
 #include "data.hpp"
 #include "formulas.hpp"
-#include "../lib/pico-servo/include/pico_servo.h"
+#include "pico/stdlib.h"
 
 #include <cstdio>
 
@@ -35,7 +35,6 @@ void Mover::move(float rockElev, float rockLat, float rockLong) {
         int dataIndex = (to_ms_since_boot(get_absolute_time()) - launchTime) / 500;
         rockElev = alt_data[dataIndex];
     }
-
 
     // convert coordinates to angles
     double dist = distance(rockLat, rockLong, constants::GROUND_LAT, constants::GROUND_LONG);

@@ -15,14 +15,13 @@
 // #define MOVER
 // #define DEBUG
 
-#include "radio.hpp"
 #include "mover.hpp"
+#include "radio.hpp"
 #include "tusb.h"
 #include <cstring>
 #include <iostream>
 #include <stdio.h>
 #include <string>
-
 
 float rockElev;
 float rockLat;
@@ -30,8 +29,6 @@ float rockLong;
 
 // RadioLib setup
 Radio radio;
-
-
 
 #ifdef MOVER
 // Mover setup
@@ -53,7 +50,7 @@ int main() {
     // Mover initialization
     mover.init();
 #endif // MOVER
-    
+
     char received[constants::MSG_LEN];
     char radio_metadata[sizeof(float) * 3];
 
