@@ -12,13 +12,12 @@
 
  */
 
-// Uncomment if you want debug information about signal strength and motor movements
-// #define DEBUG
-
-// #define STEPPER
-// #define SERVO
+#define SERVO
+#define STEPPER
+#define DEBUG
 
 #include "../lib/pico-servo/include/pico_servo.h"
+#include "constants.hpp"
 #include "data.hpp"
 #include "formulas.hpp"
 #include "pico/stdlib.h"
@@ -35,50 +34,23 @@
 #include "../lib/pico-servo/src/pico_servo.c"
 #include "../lib/pico-stepper/lib/stepper.c"
 
-#define ALTITUDE_OFFSET 9
-#define LATITUDE_OFFSET 13
-#define LONGITUDE_OFFSET 17
-
-#define SERVO_PIN 12
-
 bool launched = false;
 bool recPacket = false;
 long launchTime = 0;
-float groundElev = 0.0;
-float groundLat = 0.0;
-float groundLong = 0.0;
 int stepPos = 0;
 float rockElev;
 float rockLat;
 float rockLong;
-
-// Radio settings
-float freq = 915;  // MHz
-float bw = 125;    // kHz
-uint8_t sf = 7;    // Between 7 and 12
-uint8_t cr = 8;    // Between 5 and 8. 4/8 coding ration - one redundancy bit for every data bit
-uint8_t sw = 0x16; // Sync-word (defines network) Default is 0d18
-int8_t pwr = 20;   // Between 2 and 17 or 20 for max power
 
 // RadioLib setup
 PicoHal *hal = new PicoHal(SPI_PORT, SPI_MISO, SPI_MOSI, SPI_SCK, 8000000);
 
 SX1276 radio = new Module(hal, RX_CS, RX_DIO0, RADIOLIB_NC, RX_DIO1);
 
-const int msglen = 86;
-
 // initialize the stepper library on pins 7 through 10:
 
 #ifdef STEPPER
 stepper_t stepper;
-const uint8_t stepper_pin_1A = 7;
-const uint8_t stepper_pin_1B = 8;
-const uint8_t stepper_pin_2A = 9;
-const uint8_t stepper_pin_2B = 10;
-const uint16_t stepper_steps_per_revolution = 200;
-const uint16_t platformStepsPerRev = 1320;
-const stepper_mode_t stepping_mode = single;
-uint8_t speed = 60;
 #endif // STEPPER
 
 int main() {
@@ -95,15 +67,15 @@ int main() {
     // Set duty cycle bounds in us
     servo_set_bounds(500, 2500);
     // Attach to pin 12
-    servo_attach(SERVO_PIN);
+    servo_attach(constants::SERVO_PIN);
     // Set servo to 0 degrees
-    servo_move_to(SERVO_PIN, 0);
+    servo_move_to(constants::SERVO_PIN, 0);
 #endif // SERVO
 
 #ifdef STEPPER
     // Initialize stepper
-    stepper_init(&stepper, stepper_pin_1A, stepper_pin_1B, stepper_pin_2A, stepper_pin_2B, stepper_steps_per_revolution, stepping_mode);
-    stepper_set_speed_rpm(&stepper, speed);
+    stepper_init(&stepper, constants::STEPPER_PIN_1A, constants::STEPPER_PIN_1B, constants::STEPPER_PIN_2A, constants::STEPPER_PIN_2B, constants::STEPPER_STEPS_PER_REV, constants::STEPPING_MODE);
+    stepper_set_speed_rpm(&stepper, constants::SPEED);
 #endif // STEPPER
 
     gpio_init(RX_CS);
@@ -121,7 +93,7 @@ int main() {
     printf("[SX1276] Initializing ... ");
 #endif // DEBUG
 
-    int state = radio.begin(freq, bw, sf, cr, sw, pwr);
+    int state = radio.begin(constants::FREQ, constants::BW, constants::SF, constants::CR, constants::SW, constants::PWR);
     if (state != RADIOLIB_ERR_NONE) {
         printf("failed, code %d\n", state);
         return 1;
@@ -136,8 +108,8 @@ int main() {
 #ifdef DEBUG
         printf("[SX1276] Waiting for incoming transmission ... ");
 #endif // DEBUG
-        uint8_t received[msglen];
-        int state = radio.receive(received, msglen);
+        uint8_t received[constants::MSG_LEN];
+        int state = radio.receive(received, constants::MSG_LEN);
 
         if (state == RADIOLIB_ERR_NONE) {
 
@@ -180,7 +152,7 @@ int main() {
             printf(" Hz\n");
 #endif // DEBUG
        // Send data to Ground Station
-            for (uint i = 0; i < msglen; i++) {
+            for (uint i = 0; i < constants::MSG_LEN; i++) {
                 printf("%c", received[i]);
             }
             for (uint i = 0; i < sizeof(radio_metadata); i++) {
@@ -190,9 +162,9 @@ int main() {
             // TODO(Zach) Check GPS valid flag
 
             // Extract values
-            memcpy(&rockElev, received + ALTITUDE_OFFSET, sizeof(float));  // Altitude field
-            memcpy(&rockLat, received + LATITUDE_OFFSET, sizeof(float));   // Latitude field
-            memcpy(&rockLong, received + LONGITUDE_OFFSET, sizeof(float)); // Longitude field
+            memcpy(&rockElev, received + constants::ALTITUDE_OFFSET, sizeof(float));  // Altitude field
+            memcpy(&rockLat, received + constants::LATITUDE_OFFSET, sizeof(float));   // Latitude field
+            memcpy(&rockLong, received + constants::LONGITUDE_OFFSET, sizeof(float)); // Longitude field
 
         } else if (state == RADIOLIB_ERR_RX_TIMEOUT) {
             // timeout occurred while waiting for a packet
@@ -206,10 +178,10 @@ int main() {
 #endif // DEBUG
         } else if (state == RADIOLIB_ERR_SPI_WRITE_FAILED) {
             // Likely something on board shorted. Restart radio module
-            int restart_state = radio.begin(freq, bw, sf, cr, sw, pwr);
+            int restart_state = radio.begin(constants::FREQ, constants::BW, constants::SF, constants::CR, constants::SW, constants::PWR);
             while (restart_state != RADIOLIB_ERR_NONE) {
                 printf("failed, code %d\n", state);
-                restart_state = radio.begin(freq, bw, sf, cr, sw, pwr);
+                restart_state = radio.begin(constants::FREQ, constants::BW, constants::SF, constants::CR, constants::SW, constants::PWR);
             }
         } else {
             // some other error occurred
@@ -227,19 +199,19 @@ int main() {
         }
 
         // convert coordinates to angles
-        double dist = distance(rockLat, rockLong, groundLat, groundLong);
+        double dist = distance(rockLat, rockLong, constants::GROUND_LAT, constants::GROUND_LONG);
 #ifdef DEBUG
         printf("Distance: ");
         printf("%d", dist);
         printf(" km\n");
 #endif // DEBUG
-        double bear = bearing(rockLat, rockLong, groundLat, groundLong);
+        double bear = bearing(rockLat, rockLong, constants::GROUND_LAT, constants::GROUND_LONG);
 #ifdef DEBUG
         printf("Bearing: ");
         printf("%d", bear);
         printf(" degrees\n");
 #endif // DEBUG
-        double asc = ascension(rockElev, groundElev, dist);
+        double asc = ascension(rockElev, constants::GROUND_ELEV, dist);
 #ifdef DEBUG
         printf("Ascension: ");
         printf("%d", asc);
@@ -247,12 +219,12 @@ int main() {
 #endif // DEBUG
 
 #ifdef STEPPER
-        int target = -1 * (bear / 360) * platformStepsPerRev;
+        int target = -1 * (bear / 360) * constants::PLATFORM_STEPS_PER_REV;
         int stepsToTake = target - stepPos;
-        if (target - stepPos > (platformStepsPerRev / 2)) {
-            stepsToTake = (target - stepPos) - platformStepsPerRev;
-        } else if (target - stepPos < -(platformStepsPerRev / 2)) {
-            stepsToTake = (target - stepPos) + platformStepsPerRev;
+        if (target - stepPos > (constants::PLATFORM_STEPS_PER_REV / 2)) {
+            stepsToTake = (target - stepPos) - constants::PLATFORM_STEPS_PER_REV;
+        } else if (target - stepPos < -(constants::PLATFORM_STEPS_PER_REV / 2)) {
+            stepsToTake = (target - stepPos) + constants::PLATFORM_STEPS_PER_REV;
         } else {
             stepsToTake = target - stepPos;
         }
@@ -260,7 +232,7 @@ int main() {
 #endif // STEPPER
 #ifdef SERVO
         // aim antenna
-        servo_move_to(SERVO_PIN, 90 - asc);
+        servo_move_to(constants::SERVO_PIN, 90 - asc);
 #endif // SERVO
 #ifdef STEPPER
         stepper_rotate_steps(&stepper, stepsToTake);
