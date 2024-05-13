@@ -42,6 +42,7 @@ int main() {
         sleep_ms(500);
     }
 
+    // Radio initialization
     if (radio.init()) {
         return 1;
     };
