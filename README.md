@@ -4,13 +4,13 @@ This is the code for receiving rocket telemetry, controlling the motor and servo
 ## Building:
 Use CMake to build by running `cmake .. && make` from the `RATS-Software/build` directory. You can make this directory by running `mkdir build` if needed.
 
-There are two flags to be aware of: DEBUG and MOVER. Both are currently disabled by default. Enabling DEBUG will print verbose information such as the radio transmission metadata and the calculated relative position of the rocket. Enabling MOVER will actuate the servo and stepper to aim the antenna at the calculated position. To toggle these flags, add the `-D<FLAG>=[ON|OFF]` to the cmake comment. For example:
+There are two flags to be aware of: DEBUG and MOVER. DEBUG prints verbose information such as the radio transmission metadata and the calculated relative position of the rocket. MOVER actuates the servo and stepper to aim the antenna at the calculated position. The normal cmake commands builds four targets, one for each permutation of these flags:
+1. rats
+2. rats-debug
+3. rats-move
+4. rats-move-debug
 
-`cmake -DDEBUG=ON -DMOVER=ON .. && make`
-
-`cmake -DDEBUG=ON .. && make`
-
-`cmake -DMOVER=ON .. && make`
+Where each target
 
 ## Board Manager:
 [pico-sdk](https://github.com/raspberrypi/pico-sdk)
