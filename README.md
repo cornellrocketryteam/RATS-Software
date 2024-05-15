@@ -1,6 +1,9 @@
 # RATS-Software
 This is the code for receiving rocket telemetry, controlling the motor and servo that aim the antenna, and forwarding data along to the GUI laptop via serial.
 
+## Cloning:
+Run `git clone --recursive <url>` to ensure you get all required submodules.
+
 ## Building:
 Use CMake to build by running `cmake .. && make` from the `RATS-Software/build` directory. You can make this directory by running `mkdir build` if needed.
 
