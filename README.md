@@ -1,8 +1,23 @@
 # RATS-Software
 This is the code for receiving rocket telemetry, controlling the motor and servo that aim the antenna, and forwarding data along to the GUI laptop via serial.
 
-## Cloning:
-Run `git clone --recursive <url>` to ensure you get all required submodules.
+## Getting Started
+### Required Dependencies
+* ```cmake```
+* ```gcc-arm-embedded``` (for macOS)
+* ```gcc-arm-none-eabi``` (for Linux)
+
+### Optional Dependencies
+* ```doxygen```: For documentation generation
+* ```clang-format```: For formatting code
+
+_These dependencies can be install via [Homebrew](https://brew.sh/) on macOS or [apt](https://ubuntu.com/server/docs/package-management) on WSL._
+  
+### Setup
+1. Install the required dependencies
+2. Run ```git submodule update --init``` from within ```lib/```
+3. Run ```git submodule update --init``` from within ```lib/pico-sdk/```
+4. Run ```git submodule update --init``` from within ```lib/pico-servo/```
 
 ## Building:
 Use CMake to build by running `cmake .. && make` from the `RATS-Software/build` directory. You can make this directory by running `mkdir build` if needed.
