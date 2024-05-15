@@ -4,3 +4,9 @@
 [submodule "lib/RadioLib"]
 	path = lib/RadioLib
 	url = git@github.com:jgromes/RadioLib.git
+[submodule "lib/pico-stepper"]
+	path = lib/pico-stepper
+	url = git@github.com:antgon/pico-stepper.git
+[submodule "lib/pico-servo"]
+	path = lib/pico-servo
+	url = git@github.com:ZachGarcia42/pico-servo.git
