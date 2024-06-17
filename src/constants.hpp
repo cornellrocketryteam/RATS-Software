@@ -31,17 +31,17 @@ namespace constants {
     const uint8_t SPI_MOSI = 3;
     const uint8_t SPI_SCK = 2;
 
-    const uint8_t RX_CS = 5;
-    const uint8_t RX_RST = 0;
-    const uint8_t RX_DIO0 = 13;
-    const uint8_t RX_DIO1 = 14;
+    const uint8_t RX_CS = 26;       // FOR COMPETITION ONLY
+    const uint8_t RX_RST = 22;      // FOR COMPETITION ONLY
+    const uint8_t RX_DIO0 = 14;     // FOR COMPETITION ONLY
+    const uint8_t RX_DIO1 = 15;     // FOR COMPETITION ONLY
 
     // Radio
-    const float FREQ = 915;  // MHz
-    const float BW = 125;    // kHz
-    const uint8_t SF = 7;    // Between 7 and 12
-    const uint8_t CR = 8;    // Between 5 and 8. 4/8 coding ration - one redundancy bit for every data bit
-    const uint8_t SW = 0x16; // Sync-word (defines network) Default is 0d18
-    const int8_t PWR = 20;   // Between 2 and 17 or 20 for max power
+    const float FREQ = 922.2;       // MHz FOR COMPETITION ONLY
+    const float BW = 125;           // kHz
+    const uint8_t SF = 7;           // Between 7 and 12
+    const uint8_t CR = 8;           // Between 5 and 8. 4/8 coding ration - one redundancy bit for every data bit
+    const uint8_t SW = 0x16;        // Sync-word (defines network) Default is 0d18
+    const int8_t PWR = 20;          // Between 2 and 17 or 20 for max power
 
 } // namespace constants
