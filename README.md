@@ -1,5 +1,8 @@
-# Pico Project Template
-As a demo, the code in this template simply turns on the onboard LED and continously prints "Hello, world!" to serial.
+# RATS Software
+Rotational Antenna Tracking System (RATS) Software for the Cornell Rocketry Team
+
+[Confluence Page](https://confluence.cornell.edu/display/crt/RATS+Software) 
+
 
 ## How to Use
 
