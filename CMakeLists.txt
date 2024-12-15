@@ -17,6 +17,8 @@ add_compile_options(
     -Wno-unused-function
 )
 
+add_definitions(-DUSBD_PRODUCT="RATS Pico")
+
 # Add all executables
 add_executable(${PROJECT_NAME}
     src/main.cpp
