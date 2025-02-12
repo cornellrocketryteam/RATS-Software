@@ -1,3 +1,10 @@
+/**
+ * @file sd.cpp
+ * @author sj728
+ *
+ * @brief SD card class impelementation for logging data
+ */
+
 #include "sd.hpp"
 
 /* Begins the SD card interface by mounting the SD card.

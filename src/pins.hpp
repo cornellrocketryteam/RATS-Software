@@ -7,8 +7,8 @@
 #ifndef PINS_HPP
 #define PINS_HPP
 
-// #define SD_CMD 3
-// #define SD_D0 4
+#define SD_CMD 3
+#define SD_D0 4
 
 // SD card reader pins
 #define SPI_PORT spi0

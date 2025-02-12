@@ -39,3 +39,4 @@ sd_card_t *sd_get_by_num(size_t num)
     {
         return NULL;
     }
+}

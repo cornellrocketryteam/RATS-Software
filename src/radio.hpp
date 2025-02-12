@@ -1,8 +1,8 @@
 /**
- * @file stepper.hpp
+ * @file radio.hpp
  * @author sj728
  *
- * @brief Interface for radio module
+ * @brief Interface for the radio module (RFD900x)
  */
 
 #ifndef RADIO_HPP

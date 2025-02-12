@@ -1,3 +1,10 @@
+/**
+ * @file radio.cpp
+ * @author sj728
+ *
+ * @brief Radio module implementation for the RFD900x
+ */
+
 #include "radio.hpp"
 #include "hardware/uart.h"
 #include "hardware/gpio.h"
