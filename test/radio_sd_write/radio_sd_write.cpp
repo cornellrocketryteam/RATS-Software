@@ -27,7 +27,10 @@
 
 // Timeout Constants
 #define RESPONSE_TIMEOUT_MS 1000 // Time to wait after last received character
-#define MAX_RESPONSE_SIZE 1024   // Maximum expected response size
+#define MAX_RESPONSE_SIZE 10000  // Maximum expected response size
+
+const uint32_t SYNC_WORD = 0x43525421;
+const size_t PACKET_SIZE = 100;
 
 FIL fil;
 const char *command_enter_seq = "+++";
@@ -37,6 +40,15 @@ const int rfm_baudrate = 115200;
 
 // Time to wait between reads
 const int WAIT_TIME_MS = 2000;
+
+bool read_sync_word(void *buffer, int start)
+{
+
+    uint32_t sync_word = ((uint32_t *)buffer)[start];
+
+    // printf("Sync word: %08X\n", sync_word);
+    return sync_word == SYNC_WORD;
+}
 
 void print_buffer_hex(const char *buffer, size_t size)
 {
@@ -223,18 +235,11 @@ bool receive_string(const uint32_t timeout_s, const bool write_to_sd)
     while (true)
     {
         // If there isn't data after 1ms, the data burst should be over
-        // while (uart_is_readable_within_us(UART_PORT, 100000000)) {
-
-        while (uart_is_readable_within_us(UART_PORT, 10000))
+        while (uart_is_readable_within_us(UART_PORT, 500000))
         {
 
             const char c = uart_getc(UART_PORT);
-            printf("%c", c);
-            // const bool end_of_message = (c == '\0');
-            // if (end_of_message)
-            // {
-            //     break;
-            // }
+            // printf("%c", c);
 
             // Append the character to the response buffer if there's space
             if (response_index < (MAX_RESPONSE_SIZE - 1))
@@ -245,16 +250,8 @@ bool receive_string(const uint32_t timeout_s, const bool write_to_sd)
             else
             {
 
-                // if (write_to_sd) {
-                //     f_printf(&fil, "%s", response_buffer);
-                // }
-                // printf("\"(%s)\"", response_buffer);
-
-                // memset(response_buffer, 0, MAX_RESPONSE_SIZE);
-                // response_index = 0;
-
                 printf("Response buffer overflow: \n");
-                for (int i = 0; i < response_index; i++)
+                for (size_t i = 0; i < response_index; i++)
                 {
                     printf("%c", response_buffer[i]);
                 }
@@ -262,15 +259,6 @@ bool receive_string(const uint32_t timeout_s, const bool write_to_sd)
             }
             // printf("%c, ", c);
         }
-
-        // while (uart_is_readable_within_us(UART_PORT, 100000000)) {
-
-        //     char c = uart_getc(UART_PORT);
-        //     if (c == '\0') {
-        //         continue;
-        //     }
-        //     printf("%c", c);
-        // }
 
         // If data was written
         const bool data_received = (response_index != 0);
@@ -280,12 +268,126 @@ bool receive_string(const uint32_t timeout_s, const bool write_to_sd)
             {
                 f_printf(&fil, "%s", response_buffer);
             }
-            printf("\"%s\"\n", response_buffer);
+            // printf("\"%s\"\n", response_buffer);
 
-            memset(response_buffer, 0, MAX_RESPONSE_SIZE);
+            for (size_t i = 0; i < response_index; i++)
+            {
+                printf("%c", response_buffer[i]);
+            }
+
+            // memset(response_buffer, -1, MAX_RESPONSE_SIZE);
             response_index = 0;
 
             printf("\n\n\n\n\n");
+        }
+
+        // Calculate elapsed time in seconds
+        const uint64_t elapsed_s = absolute_time_diff_us(start_time, get_absolute_time()) / 1000000;
+
+        // Check if the elapsed time has exceeded the timeout
+        const bool timeout_exceeded = elapsed_s >= timeout_s;
+        if (timeout_exceeded)
+        {
+            printf("Telemetry reception timed out after %u s.\n", timeout_s);
+            break;
+        }
+    }
+
+    return true;
+}
+
+bool receive_special_string(const uint32_t timeout_s, const bool write_to_sd)
+{
+    const int NUMBER_SIZE = 4;
+
+    char response_buffer[MAX_RESPONSE_SIZE];
+    size_t stop_index = 0;
+
+    // Get the current time as the start time (microseconds)
+    const absolute_time_t start_time = get_absolute_time();
+
+    uint32_t extracted_num = UINT32_MAX;
+
+    bool new_packet = true;
+    while (true)
+    {
+        // If there isn't data after 1ms, the data burst should be over
+        const int wait_time_us = 5000;
+        while (uart_is_readable_within_us(UART_PORT, wait_time_us))
+        {
+
+            const char c = uart_getc(UART_PORT);
+            // printf("%c", c);
+
+            // Append the character to the response buffer if there's space
+            if (stop_index < (MAX_RESPONSE_SIZE - 1))
+            {
+                response_buffer[stop_index++] = c;
+                response_buffer[stop_index] = '\0'; // Null-terminate
+            }
+            else
+            {
+
+                printf("Response buffer overflow: \n");
+                for (size_t i = 0; i < stop_index; i++)
+                {
+                    printf("%c", response_buffer[i]);
+                }
+                return false;
+            }
+        }
+
+        // If data was written, read data burst (1+ contiguous array of packets)
+        const bool data_received = (stop_index != 0);
+        if (data_received)
+        {
+            if (write_to_sd)
+            {
+                f_printf(&fil, "%s", response_buffer);
+            }
+            // printf("\"%s\"\n", response_buffer);
+
+            size_t i = 0;
+            while (i < stop_index)
+            {
+                // if (new_packet && stop_index < NUMBER_SIZE)
+                // {
+                //     new_packet = false;
+                // }
+
+                // Keep reading until you find sync number
+                while (i < stop_index - sizeof(SYNC_WORD) + 1 && !read_sync_word(response_buffer, i))
+                {
+                    i++;
+                }
+                i += sizeof(SYNC_WORD);
+                printf("This is the value of i: %d\n", i);
+
+                // print packet number, which is stored as a uint32_t in data
+                uint32_t tmp = extracted_num;
+                std::memcpy(&extracted_num, response_buffer + i, NUMBER_SIZE);
+
+                printf("Packet number: ");
+                printf("%u", extracted_num);
+                if (extracted_num != tmp + 1 && tmp != UINT32_MAX)
+                {
+                    printf(" (Expected %u)", tmp + 1);
+                }
+                printf("\n");
+
+                i += NUMBER_SIZE;
+                new_packet = false;
+
+                // Optional: See buffer output
+                print_buffer_hex(response_buffer, stop_index);
+
+                i += PACKET_SIZE - sizeof(SYNC_WORD) - sizeof(NUMBER_SIZE);
+            }
+
+            // memset(response_buffer, 0, );
+            stop_index = 0;
+
+            printf("\n\n");
         }
 
         // Calculate elapsed time in seconds
@@ -324,7 +426,7 @@ int main()
 
     // Read radio data
     uint32_t telemtry_timeout_s = 500000;
-    receive_string(telemtry_timeout_s, WRITE_TO_SD);
+    receive_special_string(telemtry_timeout_s, WRITE_TO_SD);
     // receive_telemetry();
     // get_all_results(WRITE_TO_SD);
 
@@ -392,3 +494,137 @@ int t_main()
 
     return 0;
 }
+
+/** This code checked for '.' at the end of the packet to indicate the end */
+
+// bool receive_special_string(const uint32_t timeout_s, const bool write_to_sd)
+// {
+//     const int NUMBER_SIZE = 4;
+//     const uint8_t END_BYTE = 0xFF;
+
+//     char response_buffer[MAX_RESPONSE_SIZE];
+//     size_t stop_index = 0;
+
+//     // Get the current time as the start time (microseconds)
+//     const absolute_time_t start_time = get_absolute_time();
+
+//     uint32_t extracted_num = UINT32_MAX;
+
+//     bool new_packet = true;
+//     while (true)
+//     {
+//         // If there isn't data after 1ms, the data burst should be over
+//         const int wait_time_us = 5000;
+//         while (uart_is_readable_within_us(UART_PORT, wait_time_us))
+//         {
+
+//             const char c = uart_getc(UART_PORT);
+//             // printf("%c", c);
+
+//             // Append the character to the response buffer if there's space
+//             if (stop_index < (MAX_RESPONSE_SIZE - 1))
+//             {
+//                 response_buffer[stop_index++] = c;
+//                 response_buffer[stop_index] = '\0'; // Null-terminate
+//             }
+//             else
+//             {
+
+//                 printf("Response buffer overflow: \n");
+//                 for (size_t i = 0; i < stop_index; i++)
+//                 {
+//                     printf("%c", response_buffer[i]);
+//                 }
+//                 return false;
+//             }
+//         }
+
+//         // If data was written
+//         const bool data_received = (stop_index != 0);
+//         if (data_received)
+//         {
+//             if (write_to_sd)
+//             {
+//                 f_printf(&fil, "%s", response_buffer);
+//             }
+//             // printf("\"%s\"\n", response_buffer);
+
+//             size_t i = 0;
+//             while (i < stop_index)
+//             {
+//                 if (new_packet && stop_index < NUMBER_SIZE)
+//                 {
+//                     new_packet = false;
+//                 }
+
+//                 // Print packet number
+//                 if (new_packet)
+//                 {
+
+//                     // print packet number, which is stored as a uint32_t in buffer
+//                     uint32_t tmp = extracted_num;
+//                     std::memcpy(&extracted_num, response_buffer + i, NUMBER_SIZE);
+
+//                     printf("Packet number: ");
+//                     printf("%u", extracted_num);
+//                     if (extracted_num != tmp + 1 && tmp != UINT32_MAX)
+//                     {
+//                         printf(" (Expected %u)", tmp + 1);
+//                     }
+//                     printf("\n");
+
+//                     i += NUMBER_SIZE;
+//                     new_packet = false;
+
+//                     // Optional: See buffer output
+//                     // print_buffer_hex(response_buffer, stop_index);
+//                     continue;
+//                 }
+
+//                 // Note: If packet got split between two data burts, the
+//                 // packet will be considered "corrupted"
+//                 bool packet_corrupted = false;
+//                 int temp_i = i;
+//                 while (i < stop_index && response_buffer[i] != END_BYTE)
+//                 {
+//                     packet_corrupted = packet_corrupted || !(response_buffer[i] == (i - temp_i));
+//                     i++;
+//                 }
+
+//                 if (i == stop_index)
+//                 {
+//                     printf("Packet got split\n");
+//                     break;
+//                 }
+
+//                 printf("\n");
+//                 new_packet = true;
+
+//                 if (packet_corrupted)
+//                 {
+//                     printf("Previous Packet is corrupted\n\n");
+//                 }
+
+//                 i++;
+//             }
+
+//             // memset(response_buffer, 0, MAX_RESPONSE_SIZE);
+//             stop_index = 0;
+
+//             printf("\n\n");
+//         }
+
+//         // Calculate elapsed time in seconds
+//         const uint64_t elapsed_s = absolute_time_diff_us(start_time, get_absolute_time()) / 1000000;
+
+//         // Check if the elapsed time has exceeded the timeout
+//         const bool timeout_exceeded = elapsed_s >= timeout_s;
+//         if (timeout_exceeded)
+//         {
+//             printf("Telemetry reception timed out after %u s.\n", timeout_s);
+//             break;
+//         }
+//     }
+
+//     return true;
+// }

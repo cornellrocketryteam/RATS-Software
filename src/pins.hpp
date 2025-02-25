@@ -10,16 +10,17 @@
 #define SD_CMD 3
 #define SD_D0 4
 
-// SD card reader pins
+// SD card reader GPIO pins
 #define SPI_PORT spi0
 #define SPI_MISO 16
 #define SPI_MOSI 19
 #define SPI_SCK 18
 #define SPI_CS 17
 
-// Radio Pins
+// Radio GPIO Pins
 #define UART_PORT uart1
 #define RFM_TX 4
 #define RFM_RX 5
 #define RFM_BAUDRATE 115200
+
 #endif // PINS_HPP

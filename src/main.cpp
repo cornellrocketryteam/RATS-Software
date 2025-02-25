@@ -15,6 +15,7 @@
 #include "ublox_mx.hpp"
 #include "ublox_nav_pvt.hpp"
 #include "hardware/i2c.h"
+#include "vector"
 
 int main()
 {
@@ -42,11 +43,12 @@ int main()
     // Iniatialize Motor controller
 #endif
 
-    Telemetry telemetry;
-
     while (true)
     {
-        bool success = radio.read(&telemetry);
+
+        std::vector<Telemetry> telemetry_packets;
+
+        bool success = radio.read(telemetry_packets);
 
         // Untested for now, but this is how data will be transferred serially
         // to the external software component (RATS proxy)
@@ -55,7 +57,10 @@ int main()
             // Write the entire struct's raw memory to stdout in one call,
             // sending it serially to the external software component
             const int num_elements = 1;
-            fwrite(&telemetry, sizeof(Telemetry), num_elements, stdout);
+            for (const Telemetry &telemetry : telemetry_packets)
+            {
+                fwrite(&telemetry, sizeof(Telemetry), num_elements, stdout);
+            }
         }
 
 #ifdef MOVER

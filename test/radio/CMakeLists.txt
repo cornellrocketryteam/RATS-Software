@@ -11,7 +11,7 @@ set(CMAKE_CXX_STANDARD 17)
 pico_sdk_init()
 
 add_definitions(-DRATS_VERBOSE)
-add_definitions(-DRATS_TIME)
+# add_definitions(-DRATS_TIME)
 
 # Add compiler flags and definitions
 add_compile_options(

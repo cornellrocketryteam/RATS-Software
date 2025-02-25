@@ -31,6 +31,27 @@
     } while (0)
 #endif
 
+const uint32_t SYNC_WORD = 0x43525421;
+
+const size_t PACKET_SIZE = 102 + sizeof(SYNC_WORD);
+
+void print_buffer_hex(const char *buffer, size_t size)
+{
+    printf("Buffer bytes (hex): ");
+    for (size_t j = 0; j < size; j++)
+    {
+        printf("%02X ", (unsigned char)buffer[j]);
+    }
+    printf("\n");
+}
+bool read_sync_word(void *buffer, int start)
+{
+    uint32_t sync_word;
+    std::memcpy(&sync_word, static_cast<char *>(buffer) + start, sizeof(sync_word));
+    // printf("Sync word: %08X\n", sync_word);
+    return sync_word == SYNC_WORD;
+}
+
 bool Radio::start()
 {
     // By default, the radio module has baudrate value rfm_baudrate, so we
@@ -50,12 +71,12 @@ bool Radio::start()
     return true;
 }
 
-bool Radio::read(Telemetry *result)
+bool Radio::read(std::vector<Telemetry> &result)
 {
+    const size_t BUFFER_SIZE = 10000;
     // Telemetry packet size in bytes
-    const int RESPONSE_SIZE = 107;
-    char data[RESPONSE_SIZE];
-    size_t data_index = 0;
+    char data[BUFFER_SIZE];
+    size_t end_index = 0;
 
 #ifdef RATS_TIME
     const absolute_time_t start_time = get_absolute_time();
@@ -69,28 +90,61 @@ bool Radio::read(Telemetry *result)
 
         // debug_log("Received character: %c\n", c);
         // Append the character to the response buffer if there's space
-        if (data_index < RESPONSE_SIZE)
+        if (end_index < BUFFER_SIZE)
         {
-            data[data_index++] = c;
+            data[end_index++] = c;
         }
         else
         {
-            return false;
+
+            debug_log("Response buffer overflow: \n");
+            break;
         }
     }
 
     // Store result if data was received
-    const bool data_received = (data_index != 0);
+    const bool data_received = (end_index != 0);
+
     if (!data_received)
     {
         return false;
     }
 
+    // printf("\n\n");
+
+    // debug_log("Data size: %d\n", end_index);
+
     // See if enough data was received
-    if (data_index != RESPONSE_SIZE)
+    // if (data_index != RESPONSE_SIZE)
+    // {
+    //     debug_log("UART data of size %d was received, but not the correct size\n", data_index);
+    //     return false;
+    // }
+
+    // print_buffer_hex(data, end_index);
+
+    // TODO: Salvage a packet if it got split between two data burts
+    size_t i = 0;
+    while (i < end_index)
     {
-        debug_log("UART data of size %d was received, but not the correct size\n", data_index);
-        return false;
+
+        // Keep reading until you find sync number
+        while (i + sizeof(SYNC_WORD) < end_index && !read_sync_word(data, i))
+        {
+            i++;
+        }
+
+        // If it's possible for the packet to have been fully delivered
+        if (i + PACKET_SIZE <= end_index)
+        {
+            // Extract the packet
+            Telemetry telemetry;
+            std::memcpy(&telemetry, data + i + sizeof(SYNC_WORD), sizeof(Telemetry));
+
+            // Store the packet
+            result.push_back(telemetry);
+        }
+        i += PACKET_SIZE;
     }
 
 #ifdef RATS_TIME
@@ -101,6 +155,12 @@ bool Radio::read(Telemetry *result)
     printf("Elapsed time: %" PRId64 " microseconds\n", elapsed_us);
 #endif
 
-    std::memcpy(result, data, sizeof(Telemetry));
+    // printf("Number of telemetry packets processed: %d\n", result.size());
+
+    if (result.size() == 0)
+    {
+        return false;
+    }
+
     return true;
 }

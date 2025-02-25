@@ -8,6 +8,7 @@
 #ifndef RADIO_HPP
 #define RADIO_HPP
 #include "telemetry.hpp"
+#include <vector>
 
 /* Container for radio functionality */
 class Radio
@@ -23,7 +24,7 @@ public:
      * Read newest data from radio module.
      * @returns true if new data was read, false otherwise
      */
-    bool read(Telemetry *data);
+    bool read(std::vector<Telemetry> &result);
 };
 
 #endif // RADIO_HPP
