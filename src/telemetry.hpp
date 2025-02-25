@@ -39,7 +39,6 @@ struct Telemetry
     float accel_y;
     float accel_z;
     float alt_temp;
-    float voltage;
     float pressure_pt3;
     float pressure_pt4;
     float motor_position;

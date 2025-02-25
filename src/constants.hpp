@@ -10,16 +10,16 @@
 /**
  * Container for hardware RATS software interacts with
  */
-namespace constants {
+namespace constants
+{
 
-    // Radio 
-
+    // Radio
+    constexpr unsigned int RFM_BAUDRATE = 115200;
     // SD
-    constexpr uint sd_baudrate = 125 * 1000000 / 6; // baud
+    constexpr unsigned int sd_baudrate = 125 * 1000000 / 6; // baud
 
-    // Stepper 
+    // Stepper
 
 }; // namespace constants
-
 
 #endif // CONSTANTS_HPP

@@ -224,87 +224,66 @@ void get_all_results()
     }
 }
 
-// int main()
-// {
-//     stdio_init_all();
-
-//     init_uart();
-
-//     gpio_init(LED);
-
-//     gpio_set_dir(LED, GPIO_OUT);
-
-//     // Needed for computer to see Raspberry Pico output properly
-//     while (!tud_cdc_connected())
-//     {
-//         sleep_ms(500);
-//     }
-
-//     sleep_ms(4000);
-//     get_all_results();
-
-//     printf("Done.\n");
-
-//     // Give enough time for all printf's to finish
-//     sleep_ms(500);
-//     return 0;
-// }
-
-int main()
+int t_main()
 {
     stdio_init_all();
 
-#ifdef RATS_VERBOSE
+    init_uart();
+
+    gpio_init(LED);
+
+    gpio_set_dir(LED, GPIO_OUT);
+
     // Needed for computer to see Raspberry Pico output properly
     while (!tud_cdc_connected())
     {
         sleep_ms(500);
     }
+
+    sleep_ms(4000);
+    get_all_results();
+
+    printf("Done.\n");
+
+    // Give enough time for all printf's to finish
+    sleep_ms(500);
+    return 0;
+}
+
+int main()
+{
+    stdio_init_all();
+
+    while (!tud_cdc_connected())
+    {
+        sleep_ms(500);
+    }
     printf("Connected to computer\n");
-#endif
 
     Radio radio;
     if (!radio.start())
     {
         printf("Radio failed to start\n");
-        // TODO: report radio failing
         return 1;
     }
-    debug_log("Radio started\n");
-    // GNSS gnss(i2c0);
-    // if (!gnss.begin_PVT(100))
-    // {
-    //     printf("GNSS failed to start\n");
-    //     return 1;
-    // }
-
-    // Initialize SD card module
-    // Initialize GNSS module
-
-#ifdef MOVER
-    // Iniatialize Motor controller
-#endif
-
-    Telemetry telemetry;
 
     while (true)
     {
-        // TODO: Write other data as needed, like GPS data
-        bool success = radio.read(&telemetry);
+        std::vector<Telemetry> telemetry_packets;
+
+        bool success = radio.read(telemetry_packets);
+
         if (success)
         {
-            // Write the entire struct's raw memory to stdout in one call,
-            // sending it serially to the external software component
-            const int num_elements = 1;
-            fwrite(&telemetry, sizeof(Telemetry), num_elements, stdout);
-            // printf("\n");
-            printTelemetry(&telemetry);
-        }
 
-#ifdef MOVER
-        // Move motors based on data from radio module
-#endif
-        // sleep_ms(500); // tempoary sleep
+            const int num_elements = 1;
+            for (const Telemetry &telemetry : telemetry_packets)
+            {
+                printf("Timestamp: %u\n", telemetry.timestamp);
+                // printTelemetry(&telemetry);
+            }
+        }
+        // sleep_ms(1000);
     }
 
     return 0;
@@ -343,7 +322,7 @@ void printTelemetry(const Telemetry *t)
     printf("  Accel Y: %f\n", t->accel_y);
     printf("  Accel Z: %f\n", t->accel_z);
     printf("  Alt Temp: %f\n", t->alt_temp);
-    printf("  Voltage: %f\n", t->voltage);
+    // printf("  Voltage: %f\n", t->voltage);
     printf("  Pressure PT3: %f\n", t->pressure_pt3);
     printf("  Pressure PT4: %f\n", t->pressure_pt4);
     printf("  Motor Position: %f\n", t->motor_position);
