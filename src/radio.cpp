@@ -31,7 +31,7 @@
     } while (0)
 #endif
 
-const uint32_t SYNC_WORD = 0x43525421;
+const uint32_t SYNC_WORD = 0x3E5D5967;
 
 const size_t PACKET_SIZE = sizeof(Telemetry) + sizeof(SYNC_WORD);
 
