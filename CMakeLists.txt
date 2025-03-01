@@ -46,6 +46,7 @@ target_link_libraries(${PROJECT_NAME}
     hardware_uart
     hardware_i2c
     hardware_gpio
+    hardware_dma
     no-OS-FatFS-SD-SDIO-SPI-RPi-Pico 
     ublox-MX-Pico
 )
