@@ -11,12 +11,14 @@
 #include "f_util.h"
 #include "ff.h"
 #include "hw_config.h"
+#include "telemetry.hpp"
 
 /**
  * Container for SD card-related functionality.
  */
-struct SD
+class SD
 {
+public:
     /**
      * Begins the SD card interface by mounting the SD card.
      * @return True on successful mount, false on mount failure.
@@ -24,12 +26,11 @@ struct SD
     bool begin();
 
     /**
-     * Logs the current state to the SD card.
+     * Logs telemetry to the SD card.
      * @return True on successful log, false on file open, write, or close failures.
      */
-    bool log();
+    bool log_telemetry(Telemetry &telemetry);
 
-    bool write();
     /**
      * Tracks the number of writes made to the current log file.
      */

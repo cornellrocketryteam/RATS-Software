@@ -110,17 +110,8 @@ bool Radio::read(std::vector<Telemetry> &result)
         return false;
     }
 
-    // printf("\n\n");
-
-    // debug_log("Data size: %d\n", end_index);
-
-    // See if enough data was received
-    // if (data_index != RESPONSE_SIZE)
-    // {
-    //     debug_log("UART data of size %d was received, but not the correct size\n", data_index);
-    //     return false;
-    // }
-
+    debug_log("\n\n");
+    debug_log("Data size: %d\n", end_index);
     // print_buffer_hex(data, end_index);
 
     // TODO: Salvage a packet if it got split between two data burts
