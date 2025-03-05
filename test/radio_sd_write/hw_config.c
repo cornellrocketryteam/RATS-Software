@@ -13,10 +13,6 @@
 //     .sdio_if_p = &sdio_if
 // };
 
-
-
-
-
 static spi_t spi = {
     .hw_inst = SPI_PORT,
     .sck_gpio = SPI_SCK,
@@ -28,13 +24,11 @@ static spi_t spi = {
 /* SPI Interface */
 static sd_spi_if_t spi_if = {
     .spi = &spi,
-    .ss_gpio = SPI_CS
-};
+    .ss_gpio = SPI_CS};
 
 static sd_card_t sd_card = {
     .type = SD_IF_SPI,
-    .spi_if_p = &spi_if
-};
+    .spi_if_p = &spi_if};
 
 /**
  * @brief Get the number of SD cards.
@@ -50,12 +44,16 @@ size_t sd_get_num() { return 1; }
  *
  * @return A pointer to the SD card object, or @c NULL if the number is invalid.
  */
-sd_card_t* sd_get_by_num(size_t num) {
-    if (0 == num) {
+sd_card_t *sd_get_by_num(size_t num)
+{
+    if (0 == num)
+    {
         // The number 0 is a valid SD card number.
         // Return a pointer to the sd_card object.
         return &sd_card;
-    } else {
+    }
+    else
+    {
         // The number is invalid. Return @c NULL.
         return NULL;
     }
