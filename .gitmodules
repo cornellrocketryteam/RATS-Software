@@ -7,3 +7,6 @@
 [submodule "lib/ublox-MX-Pico"]
 	path = lib/ublox-MX-Pico
 	url = https://github.com/cornellrocketryteam/ublox-MX-Pico
+[submodule "lib/influxdb"]
+	path = lib/influxdb
+	url = https://github.com/offa/influxdb-cxx
