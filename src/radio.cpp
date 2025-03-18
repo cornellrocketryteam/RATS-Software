@@ -83,7 +83,7 @@ bool Radio::read(std::vector<Telemetry> &result)
 #endif
 
     // If there isn't incoming data after 1ms, the data packet is over
-    const int timeout_us = 1000; // 1ms
+    const int timeout_us = 5000; // 1ms
     while (uart_is_readable_within_us(UART_PORT, timeout_us))
     {
         const char c = uart_getc(UART_PORT);
@@ -112,6 +112,7 @@ bool Radio::read(std::vector<Telemetry> &result)
 
     debug_log("\n\n");
     debug_log("Data size: %d\n", end_index);
+    debug_log("Expected data size: %d\n", PACKET_SIZE);
     // print_buffer_hex(data, end_index);
 
     // TODO: Salvage a packet if it got split between two data burts

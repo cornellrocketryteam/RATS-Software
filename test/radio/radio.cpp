@@ -22,6 +22,7 @@
 #include "ublox_mx.hpp"
 #include "ublox_nav_pvt.hpp"
 #include "hardware/i2c.h"
+#include "pico/stdlib.h"
 
 #define LED 25
 
@@ -47,6 +48,7 @@
 #endif
 
 void printTelemetry(const Telemetry *t);
+void initTelemetry(std::vector<Telemetry> &packet);
 
 const char *command_enter_seq = "+++";
 const char *save_values_seq = "AT&W\r";
@@ -250,6 +252,24 @@ int t_main()
     return 0;
 }
 
+// int main()
+// {
+//     // Initialize chosen GPIO pin
+//     const uint LED_PIN = 25;
+//     gpio_init(LED_PIN);
+//     gpio_set_dir(LED_PIN, GPIO_OUT);
+
+//     // Blink the LED forever
+//     while (true)
+//     {
+//         gpio_put(LED_PIN, 1); // Turn LED on
+//         sleep_ms(500);        // Delay 500 milliseconds
+//         gpio_put(LED_PIN, 0); // Turn LED off
+//         sleep_ms(500);        // Delay 500 milliseconds
+//     }
+//     return 0;
+// }
+
 int main()
 {
     stdio_init_all();
@@ -267,28 +287,84 @@ int main()
         return 1;
     }
 
+    // SD sd;
+    // if (!sd.begin())
+    // {
+    //     printf("SD card failed to start\n");
+    //     return 1;
+    // }
+
     while (true)
     {
         std::vector<Telemetry> telemetry_packets;
 
         bool success = radio.read(telemetry_packets);
 
+        // Test Code Block
+        // {
+        //     initTelemetry(telemetry_packets);
+        //     success = true;
+        //     sleep_ms(1000);
+        // }
+
         if (success)
         {
 
             const int num_elements = 1;
-            for (const Telemetry &telemetry : telemetry_packets)
+            for (Telemetry &telemetry : telemetry_packets)
             {
-                // printf("Timestamp: %u\n", telemetry.timestamp);
+                printf("Timestamp: %u\n", telemetry.unix_time);
                 printTelemetry(&telemetry);
+                // sd.log_telemetry(telemetry);
             }
             printf("\n");
         }
-        // sleep_ms(1000);
-        // printf("End of line\n");
     }
 
     return 0;
+}
+
+// This function initializes a dummy telemetry packet with random values and adds it to the provided vector.
+void initTelemetry(std::vector<Telemetry> &packet)
+{
+    // Create a dummy Telemetry object
+    Telemetry dummy;
+
+    dummy.metadata = rand() % 1000;
+    dummy.ms_since_boot = rand() % 100000;
+    dummy.events = rand() % 10;
+    dummy.altitude = static_cast<float>(rand() % 1000) / 10.0f;   // e.g., 0.0 to 99.9 meters
+    dummy.temperature = static_cast<float>(rand() % 500) / 10.0f; // e.g., 0.0 to 49.9 °C
+    dummy.gps_latitude = (rand() % 180) - 90;                     // Latitude from -90 to +89
+    dummy.gps_longitude = (rand() % 360) - 180;                   // Longitude from -180 to +179
+    dummy.gps_num_satellites = rand() % 12;                       // Up to 11 satellites
+    dummy.unix_time = static_cast<unsigned int>(time(nullptr));   // Current Unix time
+    dummy.horizontal_accuracy = rand() % 100;
+
+    dummy.imu_accel_x = static_cast<float>((rand() % 200) - 100) / 10.0f;
+    dummy.imu_accel_y = static_cast<float>((rand() % 200) - 100) / 10.0f;
+    dummy.imu_accel_z = static_cast<float>((rand() % 200) - 100) / 10.0f;
+
+    dummy.imu_gyro_x = static_cast<float>(rand() % 360);
+    dummy.imu_gyro_y = static_cast<float>(rand() % 360);
+    dummy.imu_gyro_z = static_cast<float>(rand() % 360);
+
+    dummy.imu_orientation_x = static_cast<float>(rand() % 360);
+    dummy.imu_orientation_y = static_cast<float>(rand() % 360);
+    dummy.imu_orientation_z = static_cast<float>(rand() % 360);
+
+    dummy.accel_x = static_cast<float>((rand() % 200) - 100) / 10.0f;
+    dummy.accel_y = static_cast<float>((rand() % 200) - 100) / 10.0f;
+    dummy.accel_z = static_cast<float>((rand() % 200) - 100) / 10.0f;
+
+    dummy.battery_volt = static_cast<float>(rand() % 500) / 100.0f; // e.g., 0.0 to 5.0 volts
+    dummy.pressure_pt3 = static_cast<float>(rand() % 1000) / 10.0f;
+    dummy.pressure_pt4 = static_cast<float>(rand() % 1000) / 10.0f;
+    dummy.rtd_temperature = static_cast<float>(rand() % 500) / 10.0f;
+    dummy.motor_position = static_cast<float>(rand() % 360); // 0 to 359 degrees
+
+    // Add the dummy telemetry packet to the vector
+    packet.push_back(dummy);
 }
 
 void printTelemetry(const Telemetry *t)

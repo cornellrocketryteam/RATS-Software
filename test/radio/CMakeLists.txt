@@ -12,6 +12,7 @@ pico_sdk_init()
 
 add_definitions(-DRATS_VERBOSE)
 # add_definitions(-DRATS_TIME)
+add_definitions(-DSDIO)
 
 # Add compiler flags and definitions
 add_compile_options(
@@ -26,6 +27,8 @@ add_executable(${PROJECT_NAME}
     # test/uart.cpp
     radio.cpp
     ../../src/radio.cpp
+    ../../src/sd.cpp
+    hw_config.c
 )
 
 # Add external libraries
