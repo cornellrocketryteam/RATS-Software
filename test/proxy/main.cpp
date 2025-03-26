@@ -1,12 +1,14 @@
 #include <iostream>
 #include <InfluxDB/InfluxDBFactory.h>
-#include "usb.hpp"
-#include "cat.hpp"
 #include <telemetry.hpp>
 #include <map>
 #include <variant>
 
-void writeRocketTelemetry(const Telemetry &t, std::unique_ptr<influxdb::InfluxDB> &influxdb);
+#include "usb.hpp"
+#include "cat.hpp"
+#include "util.hpp"
+
+void writeRadioTelemetry(const Telemetry &t, std::unique_ptr<influxdb::InfluxDB> &influxdb);
 void start_usb();
 void start_database();
 void start_cat();
@@ -14,7 +16,8 @@ void start_cat();
 int main()
 {
     std::cout << "Starting Program" << std::endl;
-    start_cat();
+    // start_cat();
+    start_database();
 }
 
 void start_cat()
@@ -29,7 +32,7 @@ void start_cat()
 
 void start_usb()
 {
-    if (!read_usb)
+    if (!read_usb())
     {
         std::cout << "USB function failed, ";
     };
@@ -41,18 +44,23 @@ void start_database()
 {
     // Example write
     auto influxdb = influxdb::InfluxDBFactory::Get("http://localhost:8086?db=test");
-    writeRocketTelemetry(Telemetry{}, influxdb);
+
+    while (true)
+    {
+        Telemetry t = generate_dummy_telemetry();
+        writeRadioTelemetry(t, influxdb);
+        std::cout << "Wrote to database" << std::endl;
+    }
 
     // influxdb->write(influxdb::Point{"test"}
     //                     .addField("value", 10)
     //                     .addTag("host", "localhost"));
-    std::cout << "Wrote to database" << std::endl;
 }
 
 // Define a variant type that can hold all of the telemetry field types.
 using FieldType = std::variant<uint16_t, uint32_t, int32_t, uint8_t, float>;
 
-void writeRocketTelemetry(const Telemetry &t, std::unique_ptr<influxdb::InfluxDB> &influxdb)
+void writeRadioTelemetry(const Telemetry &t, std::unique_ptr<influxdb::InfluxDB> &influxdb)
 {
     std::cout << "Writing Telemetry data." << std::endl;
 
@@ -84,6 +92,16 @@ void writeRocketTelemetry(const Telemetry &t, std::unique_ptr<influxdb::InfluxDB
     field_map["pressure_pt4"] = t.pressure_pt4;
     field_map["rtd_temperature"] = t.rtd_temperature;
     field_map["motor_position"] = t.motor_position;
+
+    // Debug print each field.
+
+    // for (const auto &entry : field_map)
+    // {
+    //     std::cout << entry.first << ": ";
+    //     std::visit([](auto &&value)
+    //                { std::cout << value; }, entry.second);
+    //     std::cout << std::endl;
+    // }
 
     // Write each field to the database.
     // We use std::visit to dispatch the correct type for each field.

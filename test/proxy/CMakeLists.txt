@@ -84,6 +84,7 @@ pkg_check_modules(LIBUSB REQUIRED libusb-1.0)
 add_executable(${PROJECT_NAME} main.cpp
     usb.cpp
     cat.cpp
+    util.cpp
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE
