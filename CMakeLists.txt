@@ -42,7 +42,6 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     ${PROJECT_SOURCE_DIR}/lib/no-OS-FatFS-SD-SDIO-SPI-RPi-Pico/src
     ${PROJECT_SOURCE_DIR}/lib/ublox-MX-Pico
     ${PROJECT_SOURCE_DIR}/lib/influxdb
-
 )
 # Pull in common dependencies
 target_link_libraries(${PROJECT_NAME} 
