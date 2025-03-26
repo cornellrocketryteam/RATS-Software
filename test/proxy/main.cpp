@@ -1,6 +1,7 @@
 #include <iostream>
 #include <InfluxDB/InfluxDBFactory.h>
 #include "usb.hpp"
+#include "cat.hpp"
 #include <telemetry.hpp>
 #include <map>
 #include <variant>
@@ -8,16 +9,27 @@
 void writeRocketTelemetry(const Telemetry &t, std::unique_ptr<influxdb::InfluxDB> &influxdb);
 void start_usb();
 void start_database();
+void start_cat();
 
 int main()
 {
     std::cout << "Starting Program" << std::endl;
-    start_usb();
+    start_cat();
+}
+
+void start_cat()
+{
+    if (!read_cat())
+    {
+        std::cout << "CAT function failed, ";
+    };
+
+    std::cout << "Ran CAT function" << std::endl;
 }
 
 void start_usb()
 {
-    if (!read_usb())
+    if (!read_usb)
     {
         std::cout << "USB function failed, ";
     };
