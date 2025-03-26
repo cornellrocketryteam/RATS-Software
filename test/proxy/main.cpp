@@ -6,26 +6,35 @@
 #include <variant>
 
 void writeRocketTelemetry(const Telemetry &t, std::unique_ptr<influxdb::InfluxDB> &influxdb);
+void start_usb();
+void start_database();
 
 int main()
 {
+    std::cout << "Starting Program" << std::endl;
+    start_usb();
+}
 
-    std::cout << "Hello world" << std::endl;
-
-    // if (!read_usb())
-    // {
-    //     std::cout << "USB function failed, ";
-    // };
+void start_usb()
+{
+    if (!read_usb())
+    {
+        std::cout << "USB function failed, ";
+    };
 
     std::cout << "Ran USB function" << std::endl;
+}
 
+void start_database()
+{
     // Example write
     auto influxdb = influxdb::InfluxDBFactory::Get("http://localhost:8086?db=test");
     writeRocketTelemetry(Telemetry{}, influxdb);
 
-    influxdb->write(influxdb::Point{"test"}
-                        .addField("value", 10)
-                        .addTag("host", "localhost"));
+    // influxdb->write(influxdb::Point{"test"}
+    //                     .addField("value", 10)
+    //                     .addTag("host", "localhost"));
+    std::cout << "Wrote to database" << std::endl;
 }
 
 // Define a variant type that can hold all of the telemetry field types.

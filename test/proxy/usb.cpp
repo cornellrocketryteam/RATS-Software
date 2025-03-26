@@ -4,8 +4,8 @@
 #include <cstring>       // for memcpy
 #include "telemetry.hpp" // Ensure this header is available for Telemetry definition
 
-const uint16_t vendor_id = 0x0;
-const uint16_t product_id = 0x0;
+const uint16_t vendor_id = 0x2e8a;
+const uint16_t product_id = 0x000a;
 
 bool read_usb()
 {
@@ -30,6 +30,20 @@ bool read_usb()
     }
 
     int interface_number = 0;
+
+    // Check if a kernel driver is active on the interface.
+    if (libusb_kernel_driver_active(handle, interface_number) == 1)
+    {
+        int detach_result = libusb_detach_kernel_driver(handle, interface_number);
+        if (detach_result < 0)
+        {
+            std::cerr << "Cannot detach kernel driver: " << detach_result << std::endl;
+            libusb_close(handle);
+            libusb_exit(ctx);
+            return false;
+        }
+    }
+
     if (libusb_claim_interface(handle, interface_number) < 0)
     {
         std::cerr << "Cannot claim interface." << std::endl;
@@ -44,8 +58,9 @@ bool read_usb()
     int actual_length = 0;
     // Adjust endpoint_address as needed for your device
     unsigned char endpoint_address = 0x81;
+    const int transfer_time_ms = 3'000; // 3 seconds
 
-    r = libusb_bulk_transfer(handle, endpoint_address, data, buffer_size, &actual_length, 1000);
+    r = libusb_bulk_transfer(handle, endpoint_address, data, buffer_size, &actual_length, transfer_time_ms);
     if (r == 0)
     {
         std::cout << "Data read successfully, " << actual_length << " bytes." << std::endl;
