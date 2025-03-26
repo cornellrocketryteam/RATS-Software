@@ -282,6 +282,16 @@ void read_radio()
     }
 }
 
+extern "C" void tud_cdc_task(void)
+{
+    if (tud_cdc_connected())
+    {
+        Telemetry telemetry = generate_dummy_telemetry();
+        tud_cdc_write(&telemetry, sizeof(telemetry));
+        tud_cdc_write_flush(); // ensure it's sent
+    }
+}
+
 void read_dummy()
 {
     gpio_init(LED);
@@ -293,6 +303,8 @@ void read_dummy()
     {
         Telemetry telemetry = generate_dummy_telemetry();
         printTelemetry(&telemetry);
+        tud_cdc_task();
+
         // fwrite(&telemetry, sizeof(Telemetry), num_elements, stdout);
 
         // Toggle the LED state: if it's on, turn it off; if off, turn it on.
