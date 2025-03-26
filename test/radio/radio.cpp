@@ -302,10 +302,11 @@ void read_dummy()
     while (true)
     {
         Telemetry telemetry = generate_dummy_telemetry();
-        printTelemetry(&telemetry);
-        tud_cdc_task();
+        // printTelemetry(&telemetry);
+        // tud_cdc_task();
 
-        // fwrite(&telemetry, sizeof(Telemetry), num_elements, stdout);
+        fwrite(&telemetry, sizeof(Telemetry), num_elements, stdout);
+        fflush(stdout);
 
         // Toggle the LED state: if it's on, turn it off; if off, turn it on.
         bool current_led_state = gpio_get(LED);
