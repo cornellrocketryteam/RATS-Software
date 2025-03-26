@@ -29,9 +29,9 @@ bool read_usb()
         return false;
     }
 
-    int interface_number = 0;
+    int interface_number = 1; // Change from 0 to 1
 
-    // Check if a kernel driver is active on the interface.
+    // Detach kernel driver if active on interface 1
     if (libusb_kernel_driver_active(handle, interface_number) == 1)
     {
         int detach_result = libusb_detach_kernel_driver(handle, interface_number);
@@ -57,7 +57,7 @@ bool read_usb()
     unsigned char data[buffer_size];
     int actual_length = 0;
     // Adjust endpoint_address as needed for your device
-    unsigned char endpoint_address = 0x81;
+    unsigned char endpoint_address = 0x82;
     const int transfer_time_ms = 3'000; // 3 seconds
 
     r = libusb_bulk_transfer(handle, endpoint_address, data, buffer_size, &actual_length, transfer_time_ms);
