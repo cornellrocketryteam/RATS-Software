@@ -284,6 +284,9 @@ void read_radio()
 
 void read_dummy()
 {
+    gpio_init(LED);
+    gpio_set_dir(LED, GPIO_OUT);
+
     const int num_elements = 1;
     const int SLEEP_TIME_MS = 1000;
     while (true)
@@ -292,6 +295,10 @@ void read_dummy()
         printTelemetry(&telemetry);
         // fwrite(&telemetry, sizeof(Telemetry), num_elements, stdout);
 
+        // Toggle the LED state: if it's on, turn it off; if off, turn it on.
+        bool current_led_state = gpio_get(LED);
+        gpio_put(LED, !current_led_state);
+
         sleep_ms(SLEEP_TIME_MS);
     }
 }
@@ -299,11 +306,11 @@ int main()
 {
     stdio_init_all();
 
-    while (!tud_cdc_connected())
-    {
-        sleep_ms(500);
-    }
-    printf("Connected to computer\n");
+    // while (!tud_cdc_connected())
+    // {
+    //     sleep_ms(500);
+    // }
+    // printf("Connected to computer\n");
 
     // read_radio();
     read_dummy();
