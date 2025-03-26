@@ -60,7 +60,7 @@
 
 
 cmake_minimum_required(VERSION 3.22)
-project(radio C CXX ASM)
+project(proxy C CXX ASM)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 
@@ -81,11 +81,13 @@ find_package(InfluxDB REQUIRED)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(LIBUSB REQUIRED libusb-1.0)
 
-add_executable(${PROJECT_NAME} main.cpp)
+add_executable(${PROJECT_NAME} main.cpp
+usb.cpp)
 
 target_include_directories(${PROJECT_NAME} PRIVATE
     ${LIBUSB_INCLUDE_DIRS}
     ${PROJECT_SOURCE_DIR}/../../src
+    .
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
