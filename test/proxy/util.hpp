@@ -3,5 +3,6 @@
 #include "telemetry.hpp"
 
 Telemetry generate_dummy_telemetry();
+void print_telemetry(const Telemetry *t);
 
 #endif // UTIL_HPP

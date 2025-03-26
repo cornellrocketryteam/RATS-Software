@@ -96,3 +96,41 @@ Telemetry generate_dummy_telemetry()
 
     return t;
 }
+
+void print_telemetry(const Telemetry *t)
+{
+    if (t == NULL)
+    {
+        printf("Telemetry pointer is NULL\n");
+        return;
+    }
+
+    printf("Telemetry:\n");
+    printf("  Metadata: %u\n", t->metadata);
+    printf("  Timestamp: %u\n", t->ms_since_boot);
+    printf("  Events: %u\n", t->events);
+    printf("  Altitude: %f\n", t->altitude);
+    printf("  Temperature: %f\n", t->temperature);
+    printf("  GPS Latitude: %d\n", t->gps_latitude);
+    printf("  GPS Longitude: %d\n", t->gps_longitude);
+    printf("  GPS Number of Satellites: %u\n", t->gps_num_satellites);
+    printf("  Unix Time: %u\n", t->unix_time);
+    printf("  Horizontal Accuracy: %u\n", t->horizontal_accuracy);
+    printf("  IMU Accel X: %f\n", t->imu_accel_x);
+    printf("  IMU Accel Y: %f\n", t->imu_accel_y);
+    printf("  IMU Accel Z: %f\n", t->imu_accel_z);
+    printf("  IMU Gyro X: %f\n", t->imu_gyro_x);
+    printf("  IMU Gyro Y: %f\n", t->imu_gyro_y);
+    printf("  IMU Gyro Z: %f\n", t->imu_gyro_z);
+    printf("  IMU Orientation X: %f\n", t->imu_orientation_x);
+    printf("  IMU Orientation Y: %f\n", t->imu_orientation_y);
+    printf("  IMU Orientation Z: %f\n", t->imu_orientation_z);
+    printf("  Accel X: %f\n", t->accel_x);
+    printf("  Accel Y: %f\n", t->accel_y);
+    printf("  Accel Z: %f\n", t->accel_z);
+    printf("  Battery Voltage: %f\n", t->battery_volt);
+    printf("  Pressure PT3: %f\n", t->pressure_pt3);
+    printf("  Pressure PT4: %f\n", t->pressure_pt4);
+    printf("  RTD Temperature: %f\n", t->rtd_temperature);
+    printf("  Motor Position: %f\n", t->motor_position);
+}

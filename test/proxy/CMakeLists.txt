@@ -85,6 +85,7 @@ add_executable(${PROJECT_NAME} main.cpp
     usb.cpp
     cat.cpp
     util.cpp
+    database.cpp
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE
