@@ -2,11 +2,6 @@
 #include <iostream>
 #include <cstdlib>
 #include <InfluxDB/InfluxDBFactory.h>
-
-#include "telemetry.hpp"
-#include "database.hpp"
-#include "util.hpp"
-
 #include <fcntl.h>
 #include <termios.h>
 #include <unistd.h>
@@ -14,7 +9,18 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <iostream>
+#include <fcntl.h>
+#include <sys/select.h>
+#include <unistd.h>
+#include <errno.h>
+
 #include "telemetry.hpp"
+#include "database.hpp"
+#include "util.hpp"
 
 void drain_pipeline(FILE *fp);
 void loop(FILE *fp, std::unique_ptr<influxdb::InfluxDB> &influxdb);
@@ -51,17 +57,75 @@ bool read_cat()
     return true;
 }
 
+int loop_byte_by_byte(FILE *fp, char *buffer, int timeout_ms)
+{
+    int fd = fileno(fp);
+
+    // Set up a buffer for one byte
+
+    int num_bytes = 0;
+    while (true)
+    {
+        // Set up the file descriptor set.
+        fd_set readfds;
+        FD_ZERO(&readfds);
+        FD_SET(fd, &readfds);
+
+        // Set up the timeout.
+        struct timeval timeout;
+        timeout.tv_sec = timeout_ms / 1000;
+        timeout.tv_usec = (timeout_ms % 1000) * 1000;
+
+        // Wait for data on fd with the specified timeout.
+        int ret = select(fd + 1, &readfds, NULL, NULL, &timeout);
+        if (ret < 0)
+        {
+            perror("select");
+            break;
+        }
+        if (ret == 0)
+        {
+            // Timeout reached; no new byte arrived in the given time.
+            printf("Timeout reached, no data for %d ms. Breaking out of loop.\n", timeout_ms);
+            break;
+        }
+
+        // If data is available, read one byte.
+        ssize_t n = read(fd, (buffer + num_bytes), 1);
+        if (n < 0)
+        {
+            perror("read");
+            break;
+        }
+        if (n == 0)
+        {
+            // End-of-file or stream closed.
+            printf("EOF reached, breaking out of loop.\n");
+            break;
+        }
+
+        // Process the byte (here we simply print it).
+        // For binary data, you might want to store it in a buffer.
+        // printf("Read byte: '%c' (0x%02x)\n", byte, (unsigned char)byte);
+        num_bytes++;
+    }
+
+    return num_bytes;
+}
+
 void loop(FILE *fp, std::unique_ptr<influxdb::InfluxDB> &influxdb)
 {
     // TODO: Make reading and writing happen in different threads
     const int BUFFER_SIZE = sizeof(Telemetry);
-    char buffer[BUFFER_SIZE];
+    char buffer[BUFFER_SIZE + 4];
     static int count = 0;
     while (!feof(fp))
     {
-        size_t bytes_read = fread(buffer, 1, 1000, fp);
-        if (bytes_read == 0)
-            break; // End-of-file or error
+        // size_t bytes_read = fread(buffer, 1, sizeof(buffer), fp);
+        // if (bytes_read == 0)
+        //     break; // End-of-file or error
+
+        size_t bytes_read = loop_byte_by_byte(fp, buffer, 500);
 
         printf("Read %d bytes\n\n", bytes_read);
         printf("Count: %d\n", count++);
@@ -69,7 +133,7 @@ void loop(FILE *fp, std::unique_ptr<influxdb::InfluxDB> &influxdb)
         // Process only if we got a complete Telemetry object
         if (bytes_read == sizeof(Telemetry))
         {
-            Telemetry *t = reinterpret_cast<Telemetry *>(buffer);
+            Telemetry *t = reinterpret_cast<Telemetry *>(buffer + 4);
             print_telemetry(t);
             // writeRadioTelemetry(*t, influxdb);
         }
