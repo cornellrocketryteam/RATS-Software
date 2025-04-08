@@ -2,6 +2,7 @@
 #include <iostream>
 #include <cstdlib>
 #include <InfluxDB/InfluxDBFactory.h>
+#include <InfluxDB/InfluxDBBuilder.h>
 #include <fcntl.h>
 #include <termios.h>
 #include <unistd.h>
@@ -26,10 +27,20 @@ void drain_pipeline(FILE *fp);
 void loop(FILE *fp, std::unique_ptr<influxdb::InfluxDB> &influxdb);
 bool read_cat()
 {
-    auto influxdb = influxdb::InfluxDBFactory::Get("http://localhost:8086?db=test");
 
-    std::cout << "STARTING\n\n\n\n\n"
-              << std::endl;
+    std::string ground_server_IP = "192.168.1.200";
+    std::string port_number = "8086";
+    std::string full_url = ground_server_IP + ":" + port_number + "?db=";
+    std::string db = "telemetry";
+    std::string auth_token =
+        "QHt2sPHm6KgRPties04eY_xfAqeuwUuOtuVH1AIBsXoPVWhqhGQlQLR-d1yngmLRL936pR8itzuallB__PGKvg==";
+    int TIMEOUT_S = 20;
+
+    auto influxdb = influxdb::InfluxDBBuilder::http(full_url + db)
+                        .setTimeout(std::chrono::seconds{TIMEOUT_S})
+                        .setAuthToken(auth_token)
+                        .connect();
+
 
     // Open a pipe to "cat /dev/ttyACM0"
     FILE *fp = popen("cat /dev/ttyACM0", "r");
@@ -40,18 +51,6 @@ bool read_cat()
     }
 
     drain_pipeline(fp);
-
-    // while (fgets(buffer, sizeof(buffer), fp))
-    // {
-    //     // std::cout << buffer;
-    //     // std::cout << "\n\n"
-    //     //           << std::endl;
-
-    //     Telemetry *t = (Telemetry *)buffer;
-    //     print_telemetry(t);
-    //     // writeRadioTelemetry(*t, influxdb);
-    // }
-
     loop(fp, influxdb);
     pclose(fp);
     return true;
@@ -127,7 +126,7 @@ void loop(FILE *fp, std::unique_ptr<influxdb::InfluxDB> &influxdb)
 
         size_t bytes_read = loop_byte_by_byte(fp, buffer, 500);
 
-        printf("Read %d bytes\n\n", bytes_read);
+        printf("Read %d bytes\n", bytes_read);
         printf("Count: %d\n", count++);
 
         // Process only if we got a complete Telemetry object
@@ -135,8 +134,10 @@ void loop(FILE *fp, std::unique_ptr<influxdb::InfluxDB> &influxdb)
         {
             Telemetry *t = reinterpret_cast<Telemetry *>(buffer + 4);
             print_telemetry(t);
-            // writeRadioTelemetry(*t, influxdb);
+            writeRadioTelemetry(*t, influxdb);
         }
+
+        printf("\n\n");
     }
 }
 
@@ -157,7 +158,7 @@ void drain_pipeline(FILE *fp)
             // No more data available when errno is EAGAIN or EWOULDBLOCK
             if (errno == EAGAIN || errno == EWOULDBLOCK)
             {
-                printf("No more data\n");
+                printf("Finished draining\n");
                 break;
             }
             else
@@ -180,6 +181,7 @@ void drain_pipeline(FILE *fp)
 
     // Restore the file descriptor to its original blocking mode
     fcntl(fd, F_SETFL, flags);
+    printf("\n\n");
 }
 
 // bool read_cat()
