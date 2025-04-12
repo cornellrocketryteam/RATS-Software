@@ -5,7 +5,7 @@
 
 // Define a variant type that can hold all of the telemetry field types.
 using FieldType = std::variant<uint16_t, uint32_t, int32_t, uint8_t, float>;
-
+void initPoint(influxdb::Point& point, const Telemetry &t);
 void writeRadioTelemetry(const Telemetry &t, std::unique_ptr<influxdb::InfluxDB> &influxdb)
 {
     std::cout << "Writing Telemetry data... " << std::endl;
