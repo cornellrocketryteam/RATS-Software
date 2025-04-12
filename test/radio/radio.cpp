@@ -298,15 +298,22 @@ void read_dummy()
     gpio_set_dir(LED, GPIO_OUT);
 
     const int num_elements = 1;
-    const int SLEEP_TIME_MS = 1000;
+    const int BURST_SIZE = 10;
+    const int WAIT_TIME_MS = 2;
+    const int SLEEP_TIME_MS = 500;
     while (true)
     {
-        Telemetry telemetry = generate_dummy_telemetry();
-        // printTelemetry(&telemetry);
-        // tud_cdc_task();
 
-        fwrite(&telemetry, sizeof(Telemetry), num_elements, stdout);
-        fflush(stdout);
+        for (int i = 0; i < BURST_SIZE; i++)
+        {
+            Telemetry telemetry = generate_dummy_telemetry();
+            // printTelemetry(&telemetry);
+            // tud_cdc_task();
+    
+            fwrite(&telemetry, sizeof(Telemetry), num_elements, stdout);
+            fflush(stdout);
+            sleep_ms(2);
+        }
 
         // Toggle the LED state: if it's on, turn it off; if off, turn it on.
         bool current_led_state = gpio_get(LED);
