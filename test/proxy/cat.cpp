@@ -85,7 +85,7 @@ int loop_byte_by_byte(FILE *fp, char *buffer, int timeout_ms)
         if (ret == 0)
         {
             // Timeout reached; no new byte arrived in the given time.
-            printf("Timeout reached, no data for %d ms. Breaking out of loop.\n", timeout_ms);
+            // printf("Timeout reached, no data for %d ms. Breaking out of loop.\n", timeout_ms);
             break;
         }
 
@@ -114,6 +114,7 @@ int loop_byte_by_byte(FILE *fp, char *buffer, int timeout_ms)
 
 void loop(FILE *fp, std::unique_ptr<influxdb::InfluxDB> &influxdb)
 {
+    const int WAIT_MS = 1;
     // TODO: Make reading and writing happen in different threads
     const int BUFFER_SIZE = sizeof(Telemetry);
     char buffer[BUFFER_SIZE + 4];
@@ -124,8 +125,10 @@ void loop(FILE *fp, std::unique_ptr<influxdb::InfluxDB> &influxdb)
         // if (bytes_read == 0)
         //     break; // End-of-file or error
 
-        int wait_ms = 1;
-        size_t bytes_read = loop_byte_by_byte(fp, buffer, wait_ms);
+        const int WAIT_MS = 1;
+        size_t bytes_read = loop_byte_by_byte(fp, buffer, WAIT_MS);
+    
+        if (bytes_read == 0) continue;
 
         printf("Read %d bytes\n", bytes_read);
         printf("Count: %d\n", count++);
