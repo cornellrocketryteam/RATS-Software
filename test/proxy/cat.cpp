@@ -56,7 +56,7 @@ bool read_cat()
     return true;
 }
 
-int loop_byte_by_byte(FILE *fp, char *buffer, int timeout_ms)
+int loop_byte_by_byte(FILE *fp, char *buffer, float timeout_ms)
 {
     int fd = fileno(fp);
 
@@ -73,7 +73,7 @@ int loop_byte_by_byte(FILE *fp, char *buffer, int timeout_ms)
         // Set up the timeout.
         struct timeval timeout;
         timeout.tv_sec = timeout_ms / 1000;
-        timeout.tv_usec = (timeout_ms % 1000) * 1000;
+        timeout.tv_usec = ((int)(timeout_ms * 10) % (1000*10))/10 * 1000;
 
         // Wait for data on fd with the specified timeout.
         int ret = select(fd + 1, &readfds, NULL, NULL, &timeout);
@@ -125,7 +125,7 @@ void loop(FILE *fp, std::unique_ptr<influxdb::InfluxDB> &influxdb)
         // if (bytes_read == 0)
         //     break; // End-of-file or error
 
-        const int WAIT_MS = 1;
+        const float WAIT_MS = .5;
         size_t bytes_read = loop_byte_by_byte(fp, buffer, WAIT_MS);
     
         if (bytes_read == 0) continue;
