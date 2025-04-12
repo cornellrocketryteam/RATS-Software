@@ -14,7 +14,8 @@ void writeRadioTelemetry(const Telemetry &t, std::unique_ptr<influxdb::InfluxDB>
     initPoint(point, t);
 
 
-    influxdb->write(std::move(point));
+    // Write the point to the database
+    // influxdb->write(std::move(point));
 
     std::cout<<"Data successfully written\n\n";
 }

@@ -124,7 +124,8 @@ void loop(FILE *fp, std::unique_ptr<influxdb::InfluxDB> &influxdb)
         // if (bytes_read == 0)
         //     break; // End-of-file or error
 
-        size_t bytes_read = loop_byte_by_byte(fp, buffer, 500);
+        int wait_ms = 1;
+        size_t bytes_read = loop_byte_by_byte(fp, buffer, wait_ms);
 
         printf("Read %d bytes\n", bytes_read);
         printf("Count: %d\n", count++);
