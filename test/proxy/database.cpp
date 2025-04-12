@@ -85,14 +85,15 @@ void initPoint(influxdb::Point& point, const Telemetry &t) {
     int event_i = 0;
     int meta_i = 0;
     point.addField("metadata", t.metadata)
-        .addField("ms_since_boot", t.timestamp)
+        .addField("ms_since_boot", t.ms_since_boot)
         .addField("events", t.events)
         .addField("altimeter_altitude", t.altitude)
-        .addField("altimeter_temperature", t.alt_temp)
+        .addField("altimeter_temperature", t.temperature)
         .addField("gps_latitude", t.gps_latitude)
         .addField("gps_longitude", t.gps_longitude)
         .addField("gps_satellites_in_view", t.gps_num_satellites)
-        .addField("gps_unix_time", t.gps_utc_time)
+        .addField("gps_unix_time", t.unix_time)
+        .addField("gps_horizontal_accuracy", t.horizontal_accuracy)
         .addField("imu_acceleration_x", t.imu_accel_x)
         .addField("imu_acceleration_y", t.imu_accel_y)
         .addField("imu_acceleration_z", t.imu_accel_z)
@@ -105,10 +106,10 @@ void initPoint(influxdb::Point& point, const Telemetry &t) {
         .addField("accelerometer_acceleration_x", t.accel_x)
         .addField("accelerometer_acceleration_y", t.accel_y)
         .addField("accelerometer_acceleration_z", t.accel_z)
-        .addField("battery_volt", t.voltage)
+        .addField("battery_volt", t.battery_volt)
         .addField("pressure_pt3", t.pressure_pt3)
         .addField("pressure_pt4", t.pressure_pt4)
-        .addField("rtd_temperature", t.alt_temp)
+        .addField("rtd_temperature", t.rtd_temperature)
         .addField("blims_motor_state", t.motor_position)
       
         // Add the events to the point
