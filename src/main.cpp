@@ -42,10 +42,11 @@ int main()
 #ifdef MOVER
     // Iniatialize Motor controller
 #endif
-
+    
+    const int WAIT_TIME_MS = 1;
     while (true)
     {
-
+        
         std::vector<Telemetry> telemetry_packets;
 
         bool success = radio.read(telemetry_packets);
@@ -60,6 +61,7 @@ int main()
             for (const Telemetry &telemetry : telemetry_packets)
             {
                 fwrite(&telemetry, sizeof(Telemetry), num_elements, stdout);
+                sleep_ms(WAIT_TIME_MS);
             }
         }
 
