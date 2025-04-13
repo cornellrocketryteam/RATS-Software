@@ -1,8 +1,11 @@
 #include <iostream>
 #include <InfluxDB/InfluxDBFactory.h>
+#include <InfluxDB/InfluxDBBuilder.h>
 #include <telemetry.hpp>
 #include <map>
 #include <variant>
+#include <chrono>
+#include <thread>
 
 #include "usb.hpp"
 #include "cat.hpp"
@@ -16,8 +19,8 @@ void start_cat();
 int main()
 {
     std::cout << "Starting Program" << std::endl;
-    start_cat();
-    // start_database();
+    // start_cat();
+    start_database();
 }
 
 void start_cat()
@@ -43,13 +46,37 @@ void start_usb()
 void start_database()
 {
     // Example write
-    auto influxdb = influxdb::InfluxDBFactory::Get("http://localhost:8086?db=test");
+    std::string ground_server_IP = "localhost"; // or "127.0.0.1"
+    std::string port_number = "8086";
+    std::string username = "admin";
+    std::string password = "your_password";
+    std::string db = "telemetry";
+    
+    // Format with basic auth included in the URL
+    std::string full_url = "http://" + username + ":" + password + "@" + ground_server_IP + ":" + port_number + "?db=" + db;
+    
+    auto influxdb = influxdb::InfluxDBBuilder::http(full_url)
+                        .setTimeout(std::chrono::seconds{20})
+                        .connect();
 
+
+
+
+    std::cout << "Connecting to InfluxDB at " << ground_server_IP << ":" << port_number << std::endl;
+
+
+    const int BATCH_SIZE = 10;
+    const int SLEEP_TIME_MS = 500; // in milliseconds
     while (true)
     {
-        Telemetry t = generate_dummy_telemetry();
-        writeRadioTelemetry(t, influxdb);
-        std::cout << "Wrote to database" << std::endl;
+        for (int i = 0; i < BATCH_SIZE; i++) {
+            Telemetry t = generate_dummy_telemetry();
+            int count = 0;
+            writeRadioTelemetryCasted(t, influxdb, count);
+            std::cout << "Wrote to database" << std::endl;
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds( SLEEP_TIME_MS));
     }
 
     // influxdb->write(influxdb::Point{"test"}
