@@ -6,6 +6,68 @@
 // Define a variant type that can hold all of the telemetry field types.
 using FieldType = std::variant<uint16_t, uint32_t, int32_t, uint8_t, float>;
 void initPoint(influxdb::Point& point, const Telemetry &t);
+
+
+bool getEvent(const Telemetry &t, int event_i)
+{
+    // Check if the event index is within bounds
+    if (event_i < 0 || event_i >= sizeof(t.events) * 8)
+    {
+        std::cerr << "Event index out of bounds" << std::endl;
+        return false;
+    }
+
+    // Check if the event at the given bit index is set
+    return t.events & (1 << event_i);
+}
+
+bool getMetadata(const Telemetry &t, int meta_i)
+{
+    // Check if the metadata index is within bounds
+    if (meta_i < 0 || meta_i >= sizeof(t.metadata) * 8)
+    {
+        std::cerr << "Metadata index out of bounds" << std::endl;
+        return false;
+    }
+
+    // Check if the metadata at the given bit index is set
+    return t.metadata & (1 << meta_i);
+}
+
+std::string getFlightState(const Telemetry &t) {
+    const int FLIGHT_BIT = 13;
+    const int MASK = 0b111;
+
+    // Only read bits[13-15]
+    int value = (t.events & (1 << FLIGHT_BIT)) & MASK;
+    std::string flight_state;
+    switch (value) {
+        case 0b000:
+            flight_state = "Startup";
+            break;
+        case 0b001:
+            flight_state = "Standby";
+            break;
+        case 0b010:
+            flight_state = "Ascent";
+            break;
+        case 0b011:
+            flight_state = "Drogue Deployed";
+            break;
+        case 0b100:
+            flight_state = "Main Deployed";
+            break;
+        case 0b101:
+            flight_state = "Fault";
+            break;
+        default:
+            flight_state = "Unknown";
+            break;
+    }
+
+    return flight_state;
+}
+
 void writeRadioTelemetry(const Telemetry &t, std::unique_ptr<influxdb::InfluxDB> &influxdb)
 {
     std::cout << "Writing Telemetry data... " << std::endl;
@@ -100,65 +162,6 @@ void writeRadioTelemetry(const Telemetry &t, std::unique_ptr<influxdb::InfluxDB>
 }
 
 
-bool getEvent(const Telemetry &t, int event_i)
-{
-    // Check if the event index is within bounds
-    if (event_i < 0 || event_i >= sizeof(t.events) * 8)
-    {
-        std::cerr << "Event index out of bounds" << std::endl;
-        return false;
-    }
-
-    // Check if the event at the given bit index is set
-    return t.events & (1 << event_i);
-}
-
-bool getMetadata(const Telemetry &t, int meta_i)
-{
-    // Check if the metadata index is within bounds
-    if (meta_i < 0 || meta_i >= sizeof(t.metadata) * 8)
-    {
-        std::cerr << "Metadata index out of bounds" << std::endl;
-        return false;
-    }
-
-    // Check if the metadata at the given bit index is set
-    return t.metadata & (1 << meta_i);
-}
-
-std::string getFlightState(const Telemetry &t) {
-    const int FLIGHT_BIT = 13;
-    const int MASK = 0b111;
-
-    // Only read bits[13-15]
-    int value = (t.events & (1 << FLIGHT_BIT)) & MASK;
-    std::string flight_state;
-    switch (value) {
-        case 0b000:
-            flight_state = "Startup";
-            break;
-        case 0b001:
-            flight_state = "Standby";
-            break;
-        case 0b010:
-            flight_state = "Ascent";
-            break;
-        case 0b011:
-            flight_state = "Drogue Deployed";
-            break;
-        case 0b100:
-            flight_state = "Main Deployed";
-            break;
-        case 0b101:
-            flight_state = "Fault";
-            break;
-        default:
-            flight_state = "Unknown";
-            break;
-    }
-
-    return flight_state;
-}
 
 void initPoint(influxdb::Point& point, const Telemetry &t) {
 
