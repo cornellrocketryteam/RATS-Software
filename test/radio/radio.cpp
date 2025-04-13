@@ -326,11 +326,11 @@ int main()
 {
     stdio_init_all();
 
-    // while (!tud_cdc_connected())
-    // {
-    //     sleep_ms(500);
-    // }
-    // printf("Connected to computer\n");
+    while (!tud_cdc_connected())
+    {
+        sleep_ms(500);
+    }
+    printf("Connected to computer\n");
 
     // read_radio();
     read_dummy();
