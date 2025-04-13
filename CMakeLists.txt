@@ -28,6 +28,8 @@ add_executable(${PROJECT_NAME}
     # test/uart.cpp
     src/radio.cpp
     src/main.cpp
+    src/sd.cpp
+    src/hw_config.c
 )
 
 # Add external libraries

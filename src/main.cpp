@@ -17,6 +17,7 @@
 #include "hardware/i2c.h"
 #include "vector"
 
+
 int main()
 {
     stdio_init_all();
@@ -37,6 +38,12 @@ int main()
     // }
 
     // Initialize SD card module
+    SD sd;
+    if (!sd.begin())
+    {
+        printf("SD card failed to start\n");
+        return 1;
+    }
     // Initialize GNSS module
 
 #ifdef MOVER
@@ -46,11 +53,15 @@ int main()
     const int WAIT_TIME_MS = 1;
     while (true)
     {
-        
+        // std::cout<<"Waiting for telemetry data..."<<std::endl;
         std::vector<Telemetry> telemetry_packets;
 
         bool success = radio.read(telemetry_packets);
 
+        // Telemetry telemetry;
+        // sd.log_telemetry(telemetry);
+
+        
         // Untested for now, but this is how data will be transferred serially
         // to the external software component (RATS proxy)
         if (success)
@@ -60,10 +71,15 @@ int main()
             const int num_elements = 1;
             for (const Telemetry &telemetry : telemetry_packets)
             {
+                sd.log_telemetry(telemetry);
                 fwrite(&telemetry, sizeof(Telemetry), num_elements, stdout);
+                fflush(stdout);
+
                 sleep_ms(WAIT_TIME_MS);
             }
         }
+
+        sleep_ms(2000);
 
 #ifdef MOVER
         // Move motors based on data from radio module
