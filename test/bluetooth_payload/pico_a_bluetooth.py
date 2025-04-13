@@ -136,7 +136,7 @@ async def ble_scan():
         async for result in scanner:
             print(result.name())
             if result.name() == NAME_TARGET:
-                print("Found Raspberry Pico'")
+                print("Found Raspberry Pico")
                 return result
             
             if result.name() == IAM_SENDING_TO and BLE_SVC_UUID in result.services():
@@ -165,27 +165,6 @@ async def run_central_mode():
 
         print(f"{IAM} connected to {connection}")
 
-        # Discover services
-        async with connection:
-            try:
-                service = await connection.service(BLE_SVC_UUID)
-                characteristic = await service.characteristic(BLE_CHARACTERISTIC_UUID)
-            except (asyncio.TimeoutError, AttributeError):
-                print("Timed out discovering services/characteristics")
-                continue
-            except Exception as e:
-                print(f"Error discovering services {e}")
-                await connection.disconnect()
-                continue
-
-            tasks = [
-                asyncio.create_task(receive_data_task(characteristic)),
-            ]
-            await asyncio.gather(*tasks)
-
-            await connection.disconnected()
-            print(f"{BLE_NAME} disconnected from {device.name()}")
-            break
 
 async def main():
     """ Main function """
@@ -201,4 +180,7 @@ async def main():
 
         await asyncio.gather(*tasks)
 
-asyncio.run(main())
+def main_bluetooth():
+    
+    asyncio.run(main())
+
