@@ -35,7 +35,7 @@ int main()
 
     // Open file
     FIL fil;
-    const char *const filename = "test.txt";
+    const char *const filename = "test-4-13.txt";
     fr = f_open(&fil, filename, FA_OPEN_APPEND | FA_WRITE);
     if (FR_OK != fr && FR_EXIST != fr)
     {

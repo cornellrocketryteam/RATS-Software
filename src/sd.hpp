@@ -29,7 +29,7 @@ public:
      * Logs telemetry to the SD card.
      * @return True on successful log, false on file open, write, or close failures.
      */
-    bool log_telemetry(Telemetry &telemetry);
+    bool log_telemetry(const Telemetry &telemetry);
 
     /**
      * Tracks the number of writes made to the current log file.
