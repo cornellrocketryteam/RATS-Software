@@ -299,7 +299,7 @@ void read_dummy()
 
     const int num_elements = 1;
     const int BURST_SIZE = 10;
-    const int WAIT_TIME_MS = 2;
+    const int WAIT_TIME_MS = 1;
     const int SLEEP_TIME_MS = 500;
     while (true)
     {
@@ -312,7 +312,7 @@ void read_dummy()
     
             fwrite(&telemetry, sizeof(Telemetry), num_elements, stdout);
             fflush(stdout);
-            sleep_ms(2);
+            sleep_ms(WAIT_TIME_MS);
         }
 
         // Toggle the LED state: if it's on, turn it off; if off, turn it on.
