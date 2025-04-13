@@ -19,8 +19,8 @@ void start_cat();
 int main()
 {
     std::cout << "Starting Program" << std::endl;
-    // start_cat();
-    start_database();
+    start_cat();
+    // start_database();
 }
 
 void start_cat()
