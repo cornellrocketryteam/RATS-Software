@@ -74,7 +74,7 @@ void writeRadioTelemetry(const Telemetry &t, std::unique_ptr<influxdb::InfluxDB>
 
     // auto point = influxdb::Point{"Fill Radio"};
     // initPoint(point, t);
-    const std::string title = "Ground Radio";
+    const std::string title = "Fill Radio";
 
     int event_i = 0;
     int meta_i = 0;
@@ -253,7 +253,7 @@ void writeRadioTelemetryCasted(const Telemetry &t, std::unique_ptr<influxdb::Inf
 {
     std::cout << "Writing Telemetry data... " << std::endl;
 
-    const std::string measurement = "Ground_Radio"; // Using underscore instead of space
+    const std::string measurement = "Ground Radio"; // Using underscore instead of space
     auto timestamp = std::chrono::system_clock::now();
 
     int event_i = 0;
@@ -351,7 +351,7 @@ void writeRadioTelemetryCasted(const Telemetry &t, std::unique_ptr<influxdb::Inf
 void writeRadioTelemetryAsIndividualPoints(const Telemetry &t, std::unique_ptr<influxdb::InfluxDB> &influxdb, int& count)
 {
     std::cout << "Writing Telemetry data as individual points... " << std::endl;
-    const std::string measurement = "Ground_Radio"; // Using underscore instead of space
+    const std::string measurement = "Ground Radio"; // Using underscore instead of space
     
     try {
         // We'll use type casting to convert values to well-supported types

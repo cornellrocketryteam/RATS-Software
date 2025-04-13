@@ -28,33 +28,33 @@ void loop(FILE *fp, std::unique_ptr<influxdb::InfluxDB> &influxdb);
 bool read_cat()
 {
 
-    // std::string ground_server_IP = "192.168.1.200";
-    // std::string port_number = "8086";
-    // std::string full_url = ground_server_IP + ":" + port_number + "?db=";
-    // std::string db = "telemetry";
-    // std::string auth_token =
-    //     "QHt2sPHm6KgRPties04eY_xfAqeuwUuOtuVH1AIBsXoPVWhqhGQlQLR-d1yngmLRL936pR8itzuallB__PGKvg==";
-    // int TIMEOUT_S = 20;
-
-    // auto influxdb = influxdb::InfluxDBBuilder::http(full_url + db)
-    //                     .setTimeout(std::chrono::seconds{TIMEOUT_S})
-    //                     .setAuthToken(auth_token)
-    //                     .connect();
-
-
-
-    std::string ground_server_IP = "localhost"; // or "127.0.0.1"
+    std::string ground_server_IP = "192.168.1.200";
     std::string port_number = "8086";
-    std::string username = "admin";
-    std::string password = "your_password";
+    std::string full_url = ground_server_IP + ":" + port_number + "?db=";
     std::string db = "telemetry";
-    
-    // Format with basic auth included in the URL
-    std::string full_url = "http://" + username + ":" + password + "@" + ground_server_IP + ":" + port_number + "?db=" + db;
-    
-    auto influxdb = influxdb::InfluxDBBuilder::http(full_url)
-                        .setTimeout(std::chrono::seconds{20})
+    std::string auth_token =
+        "QHt2sPHm6KgRPties04eY_xfAqeuwUuOtuVH1AIBsXoPVWhqhGQlQLR-d1yngmLRL936pR8itzuallB__PGKvg==";
+    int TIMEOUT_S = 20;
+
+    auto influxdb = influxdb::InfluxDBBuilder::http(full_url + db)
+                        .setTimeout(std::chrono::seconds{TIMEOUT_S})
+                        .setAuthToken(auth_token)
                         .connect();
+
+
+
+    // std::string ground_server_IP = "localhost"; // or "127.0.0.1"
+    // std::string port_number = "8086";
+    // std::string username = "admin";
+    // std::string password = "your_password";
+    // std::string db = "telemetry";
+    
+    // // Format with basic auth included in the URL
+    // std::string full_url = "http://" + username + ":" + password + "@" + ground_server_IP + ":" + port_number + "?db=" + db;
+    
+    // auto influxdb = influxdb::InfluxDBBuilder::http(full_url)
+    //                     .setTimeout(std::chrono::seconds{20})
+    //                     .connect();
 
 
 
