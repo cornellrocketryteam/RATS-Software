@@ -6,6 +6,8 @@ include(lib/pico-sdk/pico_sdk_init.cmake)
 project(rats C CXX ASM)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
+# Antenna configuration checks use C++ exceptions.
+set(PICO_CXX_ENABLE_EXCEPTIONS 1)
 
 # Initialize the SDK
 pico_sdk_init()

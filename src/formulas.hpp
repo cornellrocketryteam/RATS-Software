@@ -12,32 +12,36 @@
 #include <cmath>
 #include <stdexcept>
 
+#include "units.hpp"
+
 namespace rats {
     constexpr double pi = 3.14159265358979323846;
     /* Earth radius in meters used by the spherical distance calculation. */
     constexpr double earthRadiusM = 6371000.0;
+    /* Minimum ground separation in meters for a defined pointing direction. */
+    constexpr double minimumPointingDistanceM = 0.01;
 
     /**
      * Converts an angle from degrees to radians.
      */
     inline double toRadians(double degrees) {
-        return degrees * pi / 180.0;
+        return degrees * pi / units::degreesPerHalfRevolution;
     }
 
     /**
      * Converts an angle from radians to degrees.
      */
     inline double toDegrees(double radians) {
-        return radians * 180.0 / pi;
+        return radians * units::degreesPerHalfRevolution / pi;
     }
 
     /**
      * Wraps an angle to the range [-180, 180) degrees.
      */
     inline double wrap180(double degrees) {
-        double angle = std::fmod(degrees + 180.0, 360.0);
-        if (angle < 0.0) angle += 360.0;
-        return angle - 180.0;
+        double angle = std::fmod(degrees + units::degreesPerHalfRevolution, units::degreesPerRevolution);
+        if (angle < 0.0) angle += units::degreesPerRevolution;
+        return angle - units::degreesPerHalfRevolution;
     }
 
     /**
@@ -55,8 +59,8 @@ namespace rats {
      * @return True if the position is valid, false otherwise.
      */
     inline bool valid(Position p) {
-        return std::isfinite(p.latitudeDeg) && std::abs(p.latitudeDeg) <= 90.0 &&
-               std::isfinite(p.longitudeDeg) && std::abs(p.longitudeDeg) <= 180.0 &&
+        return std::isfinite(p.latitudeDeg) && std::abs(p.latitudeDeg) <= units::degreesPerQuarterRevolution &&
+               std::isfinite(p.longitudeDeg) && std::abs(p.longitudeDeg) <= units::degreesPerHalfRevolution &&
                std::isfinite(p.altitudeM);
     }
 
@@ -95,13 +99,13 @@ namespace rats {
         const double lat2 = toRadians(rocket.latitudeDeg);
         const double dLon = toRadians(rocket.longitudeDeg - station.longitudeDeg);
         const double horizontal = distance(station.latitudeDeg, station.longitudeDeg, rocket.latitudeDeg, rocket.longitudeDeg);
-        if (horizontal < 0.01)
+        if (horizontal < minimumPointingDistanceM)
             throw std::invalid_argument("Undefined azimuth at coincident coordinates");
         const double y = std::sin(dLon) * std::cos(lat2);
         const double x = std::cos(lat1) * std::sin(lat2) -
                          std::sin(lat1) * std::cos(lat2) * std::cos(dLon);
         double azimuth = toDegrees(std::atan2(y, x));
-        if (azimuth < 0.0) azimuth += 360.0;
+        if (azimuth < 0.0) azimuth += units::degreesPerRevolution;
         return {azimuth, toDegrees(std::atan2(rocket.altitudeM - station.altitudeM, horizontal)), horizontal};
     }
 } // namespace rats

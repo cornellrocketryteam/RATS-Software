@@ -14,6 +14,8 @@
 #include <limits>
 #include <stdexcept>
 
+#include "units.hpp"
+
 namespace rats {
 
     /**
@@ -66,7 +68,7 @@ namespace rats {
                 cfg_.minDegrees >= cfg_.maxDegrees || cfg_.pulseHighUs == 0 ||
                 cfg_.pulsePeriodUs <= cfg_.pulseHighUs || cfg_.directionSetupUs == 0)
                 throw std::invalid_argument("Invalid axis configuration");
-            stepsPerDegree_ = stepsPerRev / 360.0;
+            stepsPerDegree_ = stepsPerRev / units::degreesPerRevolution;
             if (!positiveFinite(stepsPerDegree_))
                 throw std::invalid_argument("Unrepresentable motor scale");
             minStep_ = checkedIndex(std::ceil(cfg_.minDegrees * stepsPerDegree_));
