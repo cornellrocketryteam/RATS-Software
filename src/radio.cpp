@@ -6,6 +6,7 @@
  */
 
 #include "radio.hpp"
+#include "constants.hpp"
 #include "hardware/uart.h"
 #include "hardware/gpio.h"
 #include "hardware/uart.h"
@@ -56,13 +57,13 @@ bool Radio::start()
 {
     // By default, the radio module has baudrate value rfm_baudrate, so we
     // set that value on the local UART port
-    uart_init(UART_PORT, RFM_BAUDRATE);
+    uart_init(UART_PORT, constants::radioBaudrate);
 
     gpio_set_function(RFM_TX, GPIO_FUNC_UART);
     gpio_set_function(RFM_RX, GPIO_FUNC_UART);
 
     // Set UART format to 8 data bits, 1 stop bit, no parity
-    uart_set_format(UART_PORT, 8, 1, UART_PARITY_NONE);
+    uart_set_format(UART_PORT, constants::radioDataBits, constants::radioStopBits, UART_PARITY_NONE);
 
     // Set flow control to false for both
     uart_set_hw_flow(UART_PORT, false, false);
@@ -73,9 +74,8 @@ bool Radio::start()
 
 bool Radio::read(std::vector<Telemetry> &result)
 {
-    const size_t BUFFER_SIZE = 10000;
-    // Telemetry packet size in bytes
-    char data[BUFFER_SIZE];
+    // Core 0 owns reception. Keep the large buffer out of the Pico's small stack.
+    static char data[constants::radioReceiveBufferBytes];
     size_t end_index = 0;
 
 #ifdef RATS_TIME
@@ -83,14 +83,13 @@ bool Radio::read(std::vector<Telemetry> &result)
 #endif
 
     // If there isn't incoming data after 1ms, the data packet is over
-    const int timeout_us = 1000; // 1ms
-    while (uart_is_readable_within_us(UART_PORT, timeout_us))
+    while (uart_is_readable_within_us(UART_PORT, constants::radioBurstGapUs))
     {
         const char c = uart_getc(UART_PORT);
 
         // debug_log("Received character: %c\n", c);
         // Append the character to the response buffer if there's space
-        if (end_index < BUFFER_SIZE)
+        if (end_index < constants::radioReceiveBufferBytes)
         {
             data[end_index++] = c;
         }

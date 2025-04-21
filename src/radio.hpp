@@ -22,6 +22,7 @@ public:
 
     /**
      * Read newest data from radio module.
+     * Call from core 0 only; the receive buffer is shared between calls.
      * @returns true if new data was read, false otherwise
      */
     bool read(std::vector<Telemetry> &result);
