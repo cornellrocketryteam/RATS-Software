@@ -30,6 +30,7 @@ add_executable(${PROJECT_NAME}
     # test/uart.cpp
     src/radio.cpp
     src/main.cpp
+    src/motor.cpp
     src/station.cpp
     src/sd.cpp
     src/hw_config.c
@@ -52,6 +53,8 @@ target_link_libraries(${PROJECT_NAME}
     hardware_i2c
     hardware_gpio
     hardware_dma
+    pico_multicore
+    pico_sync
     no-OS-FatFS-SD-SDIO-SPI-RPi-Pico 
     ublox-MX-Pico
 )
