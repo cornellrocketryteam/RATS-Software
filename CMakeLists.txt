@@ -12,8 +12,7 @@ set(PICO_CXX_ENABLE_EXCEPTIONS 1)
 # Initialize the SDK
 pico_sdk_init()
 
-add_definitions(-DRATS_VERBOSE)
-add_definitions(-DRATS_TIME)
+# USB carries packed binary telemetry. Text diagnostics would corrupt that stream.
 
 # Add compiler flags and definitions
 add_compile_options(
@@ -32,6 +31,7 @@ add_executable(${PROJECT_NAME}
     src/main.cpp
     src/motor.cpp
     src/station.cpp
+    src/usb.cpp
     src/sd.cpp
     src/hw_config.c
 )
