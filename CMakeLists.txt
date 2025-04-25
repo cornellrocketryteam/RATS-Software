@@ -17,7 +17,7 @@ pico_sdk_init()
 # Add compiler flags and definitions
 add_compile_options(
     -Wall
-    -Wno-format          
+    -Wno-format
     -Wno-unused-function
 )
 
@@ -25,8 +25,6 @@ add_definitions(-DUSBD_PRODUCT="RATS Pico")
 
 # Add all executables
 add_executable(${PROJECT_NAME}
-    # src_rfid/i2c_scanner.cpp
-    # test/uart.cpp
     src/radio.cpp
     src/main.cpp
     src/motor.cpp
@@ -40,14 +38,13 @@ add_executable(${PROJECT_NAME}
 add_subdirectory(${PROJECT_SOURCE_DIR}/lib/no-OS-FatFS-SD-SDIO-SPI-RPi-Pico/src build)
 add_subdirectory(${PROJECT_SOURCE_DIR}/lib/ublox-MX-Pico)
 
-
 target_include_directories(${PROJECT_NAME} PRIVATE
     ${PROJECT_SOURCE_DIR}/src
     ${PROJECT_SOURCE_DIR}/lib/no-OS-FatFS-SD-SDIO-SPI-RPi-Pico/src
     ${PROJECT_SOURCE_DIR}/lib/ublox-MX-Pico
 )
 # Pull in common dependencies
-target_link_libraries(${PROJECT_NAME} 
+target_link_libraries(${PROJECT_NAME}
     pico_stdlib
     hardware_uart
     hardware_i2c
@@ -55,15 +52,17 @@ target_link_libraries(${PROJECT_NAME}
     hardware_dma
     pico_multicore
     pico_sync
-    no-OS-FatFS-SD-SDIO-SPI-RPi-Pico 
+    no-OS-FatFS-SD-SDIO-SPI-RPi-Pico
     ublox-MX-Pico
 )
+
+# Core 0 uses SCRATCH_Y (4 KB). Core 1 receives its own static stack in motor.cpp.
+target_compile_definitions(${PROJECT_NAME} PRIVATE PICO_STACK_SIZE=0x1000)
 
 # Enable serial over USB
 pico_enable_stdio_usb(${PROJECT_NAME} 1)
 pico_enable_stdio_uart(${PROJECT_NAME} 0)
 
-# 
 pico_add_extra_outputs(${PROJECT_NAME})
 
 # Create uf2 file

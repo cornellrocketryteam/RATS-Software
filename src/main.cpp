@@ -2,92 +2,50 @@
  * @file main.cpp
  * @author sj728
  *
- * @brief The entry point for the program
+ * @brief Receives and logs telemetry, forwards it to the proxy and updates RATS.
  */
 
-#include <cstdio>
+#include "motor.hpp"
 #include "pico/stdlib.h"
-#include "pins.hpp"
-#include "tusb.h"
-#include "sd.hpp"
-#include "telemetry.hpp"
 #include "radio.hpp"
-#include "ublox_mx.hpp"
-#include "ublox_nav_pvt.hpp"
-#include "hardware/i2c.h"
-#include "vector"
+#include "sd.hpp"
+#include "station.hpp"
+#include "usb.hpp"
+#include <vector>
 
-
-int main()
-{
-    stdio_init_all();
+int main() {
+    if (!rats::motor::prepare()) return 1;
+    const auto station = rats::acquireStation();
 
     Radio radio;
-    if (!radio.start())
-    {
-        printf("Radio failed to start\n");
-        // TODO: report radio failing
-        return 1;
-    }
+    if (!radio.start()) return 1;
 
-    // GNSS gnss(i2c0);
-    // if (!gnss.begin_PVT(100))
-    // {
-    //     printf("GNSS failed to start\n");
-    //     return 1;
-    // }
-
-    // Initialize SD card module
     SD sd;
-    if (!sd.begin())
-    {
-        printf("SD card failed to start\n");
-        return 1;
-    }
-    // Initialize GNSS module
+    bool loggingHealthy = sd.begin();
+    static rats::UsbForwarder usb;
+    if (!usb.begin()) return 1;
 
-#ifdef MOVER
-    // Iniatialize Motor controller
-#endif
-int LED = 25;
-gpio_init(LED);
+    // Without a station fix, telemetry reception continues with motors disabled.
+    if (station) rats::motor::start(*station);
 
-gpio_set_dir(LED, GPIO_OUT);
-bool on = true;
+    std::vector<Telemetry> packets;
+    while (true) {
+        packets.clear();
+        if (radio.read(packets)) {
+            const auto receivedAtUs = time_us_64();
+            // Track the newest fix in a burst, but forward and log every packet.
+            if (station && !packets.empty())
+                rats::motor::update(packets.back(), receivedAtUs);
 
-    const int WAIT_TIME_MS = 1;
-    while (true)
-    {
-        gpio_put(LED, on);
-        // std::cout<<"Waiting for telemetry data..."<<std::endl;
-        std::vector<Telemetry> telemetry_packets;
-
-        bool success = radio.read(telemetry_packets);
-
-        
-        // Untested for now, but this is how data will be transferred serially
-        // to the external software component (RATS proxy)
-        if (success)
-        {
-            // Write the entire struct's raw memory to stdout in one call,
-            // sending it serially to the external software component
-            const int num_elements = 1;
-            for (const Telemetry &telemetry : telemetry_packets)
-            {
-                sd.log_telemetry(telemetry);
-                fwrite(&telemetry, sizeof(Telemetry), num_elements, stdout);
-                fflush(stdout);
-
-                sleep_ms(WAIT_TIME_MS);
+            for (const auto &packet : packets) {
+                usb.service();
+                usb.enqueue(packet);
+                if (loggingHealthy && !sd.log_telemetry(packet))
+                    loggingHealthy = false;
+                usb.service();
             }
-            on = !on;
         }
-
-    
-#ifdef MOVER
-        // Move motors based on data from radio module
-#endif
+        usb.service();
+        tight_loop_contents();
     }
-
-    return 0;
 }
