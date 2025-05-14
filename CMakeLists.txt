@@ -24,8 +24,6 @@ add_definitions(-DUSBD_PRODUCT="RATS Pico")
 
 # Add all executables
 add_executable(${PROJECT_NAME}
-    # src_rfid/i2c_scanner.cpp
-    # test/uart.cpp
     src/radio.cpp
     src/main.cpp
 )
@@ -33,7 +31,7 @@ add_executable(${PROJECT_NAME}
 # Add external libraries
 add_subdirectory(${PROJECT_SOURCE_DIR}/lib/no-OS-FatFS-SD-SDIO-SPI-RPi-Pico/src build)
 add_subdirectory(${PROJECT_SOURCE_DIR}/lib/ublox-MX-Pico)
-add_subdirectory(${PROJECT_SOURCE_DIR}/lib/influxdb)
+
 
 
 
@@ -41,7 +39,6 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     ${PROJECT_SOURCE_DIR}/src
     ${PROJECT_SOURCE_DIR}/lib/no-OS-FatFS-SD-SDIO-SPI-RPi-Pico/src
     ${PROJECT_SOURCE_DIR}/lib/ublox-MX-Pico
-    ${PROJECT_SOURCE_DIR}/lib/influxdb
 )
 # Pull in common dependencies
 target_link_libraries(${PROJECT_NAME} 
@@ -52,7 +49,6 @@ target_link_libraries(${PROJECT_NAME}
     hardware_dma
     no-OS-FatFS-SD-SDIO-SPI-RPi-Pico 
     ublox-MX-Pico
-    influxdb
 )
 
 # Enable serial over USB
