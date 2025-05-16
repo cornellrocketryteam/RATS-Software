@@ -26,6 +26,8 @@ add_definitions(-DUSBD_PRODUCT="RATS Pico")
 add_executable(${PROJECT_NAME}
     src/radio.cpp
     src/main.cpp
+    src/sd.cpp
+    src/hw_config.c
 )
 
 # Add external libraries
