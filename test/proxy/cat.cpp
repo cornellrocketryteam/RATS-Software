@@ -23,6 +23,8 @@
 #include "database.hpp"
 #include "util.hpp"
 
+const int BUFFER_SIZE = 10000; 
+
 void drain_pipeline(FILE *fp);
 void loop(FILE *fp, std::unique_ptr<influxdb::InfluxDB> &influxdb);
 bool read_cat()
@@ -78,14 +80,14 @@ bool read_cat()
     return true;
 }
 
-int loop_byte_by_byte(FILE *fp, char *buffer, float timeout_ms)
+int loop_byte_by_byte(FILE *fp, char *buffer, int buffer_size, float timeout_ms)
 {
     int fd = fileno(fp);
 
     // Set up a buffer for one byte
 
     int num_bytes = 0;
-    while (true)
+    while (num_bytes < buffer_size)
     {
         // Set up the file descriptor set.
         fd_set readfds;
@@ -136,10 +138,8 @@ int loop_byte_by_byte(FILE *fp, char *buffer, float timeout_ms)
 
 void loop(FILE *fp, std::unique_ptr<influxdb::InfluxDB> &influxdb)
 {
-    const int WAIT_MS = 1;
     // TODO: Make reading and writing happen in different threads
-    const int BUFFER_SIZE = sizeof(Telemetry);
-    char buffer[BUFFER_SIZE + 4];
+    char buffer[BUFFER_SIZE];
     static int count = 0;
     while (!feof(fp))
     {
@@ -147,21 +147,26 @@ void loop(FILE *fp, std::unique_ptr<influxdb::InfluxDB> &influxdb)
         // if (bytes_read == 0)
         //     break; // End-of-file or error
 
-        const float WAIT_MS = .5;
-        size_t bytes_read = loop_byte_by_byte(fp, buffer, WAIT_MS);
+        const float WAIT_MS = 1.f;
+        
+        int bytes_read = loop_byte_by_byte(fp, buffer, BUFFER_SIZE, WAIT_MS);
     
-        if (bytes_read == 0) continue;
+        if (bytes_read == 0) {
+            continue;
+        }
 
-        printf("Read %d bytes\n", bytes_read);
-        printf("Count: %d\n", count++);
+        std::cout << "Read " << bytes_read << " bytes\n" << std::endl;
+        std::cout << "Read attempt count: " << count++ << std::endl;
 
         // Process only if we got a complete Telemetry object
-        if (bytes_read == sizeof(Telemetry))
-        {
-            Telemetry *t = reinterpret_cast<Telemetry *>(buffer + 4);
-            print_telemetry(t);
-            writeRadioTelemetry(*t, influxdb, count);
-        }
+
+
+        // if (bytes_read == sizeof(Telemetry))
+        // {
+        //     Telemetry *t = reinterpret_cast<Telemetry *>(buffer + 4);
+        //     print_telemetry(t);
+        //     // writeRadioTelemetry(*t, influxdb, count);
+        // }
 
         printf("\n\n");
     }

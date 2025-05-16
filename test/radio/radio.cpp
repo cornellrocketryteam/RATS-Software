@@ -50,11 +50,14 @@
 void printTelemetry(const Telemetry *t);
 void initTelemetry(std::vector<Telemetry> &packet);
 Telemetry generate_dummy_telemetry();
+void initExampleTelemetry();
 
 const char *command_enter_seq = "+++";
 const char *save_values_seq = "AT&W\r";
 const char *reboot_seq = "ATZ\r";
 const int rfm_baudrate = 115200;
+
+Telemetry example_telemetry;
 
 void print_command(const char *str)
 {
@@ -278,7 +281,7 @@ void read_radio()
         if (success)
         {
 
-            const int num_elements = 1;
+            // const int num_elements = 1;
             for (Telemetry &telemetry : telemetry_packets)
             {
                 printf("Timestamp: %u\n", telemetry.unix_time);
@@ -306,17 +309,20 @@ void read_dummy()
 {
     gpio_init(LED);
     gpio_set_dir(LED, GPIO_OUT);
+    initExampleTelemetry();
 
     const int num_elements = 1;
     const int BURST_SIZE = 10;
     const int WAIT_TIME_MS = 1;
-    const int SLEEP_TIME_MS = 500;
+    const int SLEEP_TIME_MS = 2;
     while (true)
     {
 
         for (int i = 0; i < BURST_SIZE; i++)
         {
-            Telemetry telemetry = generate_dummy_telemetry();
+            // Telemetry telemetry = generate_dummy_telemetry();
+            Telemetry& telemetry = example_telemetry;
+            
             // printTelemetry(&telemetry);
             // tud_cdc_task();
     
@@ -328,6 +334,7 @@ void read_dummy()
         // Toggle the LED state: if it's on, turn it off; if off, turn it on.
         bool current_led_state = gpio_get(LED);
         gpio_put(LED, !current_led_state);
+
 
         sleep_ms(SLEEP_TIME_MS);
     }
@@ -519,4 +526,36 @@ Telemetry generate_dummy_telemetry()
     motor_position_val += 0.5f;
 
     return t;
+}
+
+void initExampleTelemetry()
+{
+    Telemetry& t = example_telemetry;
+    t.metadata = 1;
+    t.ms_since_boot = 2;
+    t.events = 3;
+    t.altitude = 4.f;
+    t.temperature = 5.f;
+    t.gps_latitude = 6; // e.g., representing 37.000000° in fixed point
+    t.gps_longitude = 7; // e.g., representing -122.000000°
+    t.gps_num_satellites = 8;
+    t.unix_time = 9;
+    t.horizontal_accuracy = 10;
+    t.imu_accel_x = 11.f;
+    t.imu_accel_y = 12.f;
+    t.imu_accel_z = 13.f;
+    t.imu_gyro_x = 14.f;
+    t.imu_gyro_y = 15.f;
+    t.imu_gyro_z = 16.f;
+    t.imu_orientation_x = 17.f;
+    t.imu_orientation_y = 18.f;
+    t.imu_orientation_z = 19.f;
+    t.accel_x = 20.f;
+    t.accel_y = 21.f;
+    t.accel_z = 22.f;
+    t.battery_volt = 23.f;
+    t.pressure_pt3 = 24.f;
+    t.pressure_pt4 = 25.f;
+    t.rtd_temperature = 26.f;
+    t.motor_position = 27.f;
 }

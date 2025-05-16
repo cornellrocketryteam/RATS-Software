@@ -82,8 +82,8 @@ bool Radio::read(std::vector<Telemetry> &result)
     const absolute_time_t start_time = get_absolute_time();
 #endif
 
-    // If there isn't incoming data after 1ms, the data packet is over
-    const int timeout_us = 5000; // 1ms
+    // If there isn't incoming data after (timeout_us/1000)ms, the data packet is over
+    const int timeout_us = 5000; 
     while (uart_is_readable_within_us(UART_PORT, timeout_us))
     {
         const char c = uart_getc(UART_PORT);
@@ -119,7 +119,6 @@ bool Radio::read(std::vector<Telemetry> &result)
     size_t i = 0;
     while (i < end_index)
     {
-
         // Keep reading until you find sync number
         while (i + sizeof(SYNC_WORD) < end_index && !read_sync_word(data, i))
         {
