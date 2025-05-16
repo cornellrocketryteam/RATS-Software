@@ -32,20 +32,6 @@ bool SD::begin()
         return false;
     }
 
-    time_t current_time;
-
-    // Get the current time
-    current_time = time(NULL);
-
-    debug_log("Current time is %s\n", ctime(&current_time));
-
-    // Add a timestamp to the filename
-    filename = "log" + std::string(ctime(&current_time)) + ".txt";
-
-    debug_log("Filename: %s\n", filename.c_str());
-
-    // filename must be defined before calling this
-    add_section();
 
     return true;
 }
@@ -54,7 +40,7 @@ bool SD::begin()
 bool SD::log_telemetry(const Telemetry &telemetry)
 {
     // Open the log file
-    FRESULT fr = f_open(&log_file, "log-4-13.txt", FA_OPEN_APPEND | FA_WRITE);
+    FRESULT fr = f_open(&log_file, "Test-5-16-2025.txt", FA_OPEN_APPEND | FA_WRITE);
     if (FR_OK != fr && FR_EXIST != fr)
     {
         debug_log("f_open error: %s (%d)\n", FRESULT_str(fr), fr);
@@ -134,37 +120,3 @@ bool SD::log_telemetry(const Telemetry &telemetry)
     return true;
 }
 
-// Delineate a new section in the log file
-bool SD::add_section()
-{
-
-    // Open the log file
-    FRESULT fr = f_open(&log_file, filename.c_str(), FA_OPEN_APPEND | FA_WRITE);
-    if (FR_OK != fr && FR_EXIST != fr)
-    {
-        debug_log("f_open error: %s (%d)\n", FRESULT_str(fr), fr);
-        return false;
-    }
-
-    const char *newlines = "\n\n\n\n\n\n\n\n\n\n";
-
-    // Print the newlines to the open file
-    if (f_printf(&log_file, "%s", newlines) < 0)
-    {
-        debug_log("print10Newlines: f_printf failed\n");
-        return false;
-    }
-
-    debug_log("10 newlines printed successfully\n");
-
-    // Close the log file
-    fr = f_close(&log_file);
-    if (FR_OK != fr)
-    {
-        debug_log("f_close error: %s (%d)\n", FRESULT_str(fr), fr);
-        return false;
-    }
-
-    debug_log("Telemeetry data written in file\n");
-    return true;
-}

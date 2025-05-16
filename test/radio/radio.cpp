@@ -312,9 +312,9 @@ void read_dummy()
     initExampleTelemetry();
 
     const int num_elements = 1;
-    const int BURST_SIZE = 10;
-    const int WAIT_TIME_MS = 1;
-    const int SLEEP_TIME_MS = 2;
+    const int BURST_SIZE = 1;
+    const int WAIT_TIME_MS = 2;
+    const int SLEEP_TIME_MS = 2000;
     while (true)
     {
 
@@ -325,7 +325,7 @@ void read_dummy()
             
             // printTelemetry(&telemetry);
             // tud_cdc_task();
-    
+            std::cout<< "Size of telemetry: " << sizeof(telemetry) << std::endl;
             fwrite(&telemetry, sizeof(Telemetry), num_elements, stdout);
             fflush(stdout);
             sleep_ms(WAIT_TIME_MS);

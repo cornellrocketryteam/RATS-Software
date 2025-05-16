@@ -22,14 +22,17 @@ int main()
 {
     stdio_init_all();
 
+
     Radio radio;
     if (!radio.start())
     {
-        printf("Radio failed to start\n");
-        // TODO: report radio failing
+        #ifdef RATS_VERBOSE
+            printf("Radio failed to start\n");
+        #endif
         return 1;
     }
 
+    // Initialize GNSS module
     // GNSS gnss(i2c0);
     // if (!gnss.begin_PVT(100))
     // {
@@ -37,29 +40,31 @@ int main()
     //     return 1;
     // }
 
+    
     // Initialize SD card module
     SD sd;
     if (!sd.begin())
     {
-        printf("SD card failed to start\n");
+        #ifdef RATS_VERBOSE
+            printf("SD card failed to start\n");
+        #endif
         return 1;
     }
-    // Initialize GNSS module
 
 #ifdef MOVER
     // Iniatialize Motor controller
 #endif
-int LED = 25;
-gpio_init(LED);
 
-gpio_set_dir(LED, GPIO_OUT);
-bool on = true;
+    int LED = 25;
+    gpio_init(LED);
 
-    const int WAIT_TIME_MS = 1;
+    gpio_set_dir(LED, GPIO_OUT);
+    bool on = true;
+
+    const int WAIT_TIME_MS = 2;
     while (true)
     {
         gpio_put(LED, on);
-        // std::cout<<"Waiting for telemetry data..."<<std::endl;
         std::vector<Telemetry> telemetry_packets;
 
         bool success = radio.read(telemetry_packets);
@@ -75,8 +80,10 @@ bool on = true;
             for (const Telemetry &telemetry : telemetry_packets)
             {
                 sd.log_telemetry(telemetry);
-                fwrite(&telemetry, sizeof(Telemetry), num_elements, stdout);
-                fflush(stdout);
+                // fwrite(&telemetry, sizeof(Telemetry), num_elements, stdout);
+                // fflush(stdout);
+                printf("Telemetry: %u\n", telemetry.unix_time);
+                
 
                 sleep_ms(WAIT_TIME_MS);
             }
@@ -87,6 +94,7 @@ bool on = true;
 #ifdef MOVER
         // Move motors based on data from radio module
 #endif
+
     }
 
     return 0;

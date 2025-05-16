@@ -51,8 +51,6 @@ public:
      */
     FIL log_file;
 
-private:
-    bool add_section();
 };
 
 #endif // SD_HPP
