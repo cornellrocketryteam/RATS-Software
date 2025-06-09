@@ -311,43 +311,37 @@ void read_dummy()
     gpio_set_dir(LED, GPIO_OUT);
     initExampleTelemetry();
 
-    const int num_elements = 1;
-    const int BURST_SIZE = 1;
+    const int BURST_SIZE = 10;
     const int WAIT_TIME_MS = 2;
-    const int SLEEP_TIME_MS = 2000;
+    const int SLEEP_TIME_MS = 1000;
     while (true)
     {
-
         for (int i = 0; i < BURST_SIZE; i++)
         {
-            // Telemetry telemetry = generate_dummy_telemetry();
-            Telemetry& telemetry = example_telemetry;
+            Telemetry telemetry = generate_dummy_telemetry();
             
-            // printTelemetry(&telemetry);
-            // tud_cdc_task();
-            std::cout<< "Size of telemetry: " << sizeof(telemetry) << std::endl;
-            fwrite(&telemetry, sizeof(Telemetry), num_elements, stdout);
-            fflush(stdout);
+            tud_cdc_write(&telemetry, sizeof(telemetry));
+            tud_cdc_write_flush(); // Make sure the data is sent immediately
+
             sleep_ms(WAIT_TIME_MS);
         }
 
-        // Toggle the LED state: if it's on, turn it off; if off, turn it on.
         bool current_led_state = gpio_get(LED);
         gpio_put(LED, !current_led_state);
-
 
         sleep_ms(SLEEP_TIME_MS);
     }
 }
+
 int main()
 {
     stdio_init_all();
 
-    while (!tud_cdc_connected())
-    {
-        sleep_ms(500);
-    }
-    printf("Connected to computer\n");
+    // while (!tud_cdc_connected())
+    // {
+    //     sleep_ms(500);
+    // }
+    // printf("Connected to computer\n");
 
     // read_radio();
     read_dummy();

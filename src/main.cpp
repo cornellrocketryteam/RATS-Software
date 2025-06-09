@@ -80,10 +80,8 @@ int main()
             for (const Telemetry &telemetry : telemetry_packets)
             {
                 sd.log_telemetry(telemetry);
-                // fwrite(&telemetry, sizeof(Telemetry), num_elements, stdout);
-                // fflush(stdout);
-                printf("Telemetry: %u\n", telemetry.unix_time);
-                
+                tud_cdc_write(&telemetry, sizeof(telemetry));
+                tud_cdc_write_flush(); // Make sure the data is sent immediately
 
                 sleep_ms(WAIT_TIME_MS);
             }

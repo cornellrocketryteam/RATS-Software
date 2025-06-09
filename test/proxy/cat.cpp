@@ -16,10 +16,12 @@
 #include <iostream>
 #include <fcntl.h>
 #include <sys/select.h>
+#include <sys/ioctl.h>
 #include <unistd.h>
 #include <errno.h>
 #include <fstream>
 #include <filesystem>
+#include <termios.h>
 
 #include "telemetry.hpp"
 #include "database.hpp"
@@ -31,8 +33,96 @@ const int BUFFER_SIZE = 10000;
 const std::string PICO_VENDOR_ID = "2e8a";
 
 
-void drain_pipeline(FILE *fp);
-void loop(FILE *fp, std::unique_ptr<influxdb::InfluxDB> &influxdb);
+void loop(int fd, std::unique_ptr<influxdb::InfluxDB> &influxdb);
+
+
+int open_serial(const std::string &port) {
+    int fd = open(port.c_str(), O_RDWR | O_NOCTTY);
+    if (fd < 0) throw std::runtime_error("open failed: " + std::string(strerror(errno)));
+
+
+    // *** START: DTR HANDSHAKE CODE ***
+    // This tells the Pico we are ready
+    int status;
+    ioctl(fd, TIOCMGET, &status); // Get current modem status bits
+    status |= TIOCM_DTR;         // Set the DTR bit
+    ioctl(fd, TIOCMSET, &status); // Apply the new status
+    // *** END: DTR HANDSHAKE CODE ***
+
+    struct termios tty;
+    tcgetattr(fd, &tty);
+
+    // put in raw mode (turn off all echo, canonical, and CR/NL conversions)
+    cfmakeraw(&tty);
+
+    // set baud rate
+    cfsetispeed(&tty, B115200);
+    cfsetospeed(&tty, B115200);
+
+    // enable the receiver and set local mode
+    tty.c_cflag |= CLOCAL | CREAD;
+
+    // apply immediately
+    if (tcsetattr(fd, TCSANOW, &tty) != 0)
+        throw std::runtime_error("tcsetattr failed: " + std::string(strerror(errno)));
+
+    return fd;
+}
+
+
+
+int loop_byte_by_byte(int fd, char *buffer, int buffer_size, float timeout_ms)
+{
+    // Set up a buffer for one byte
+    int num_bytes = 0;
+    while (num_bytes < buffer_size)
+    {
+        // Set up the file descriptor set.
+        fd_set readfds;
+        FD_ZERO(&readfds);
+        FD_SET(fd, &readfds);
+
+        // Set up the timeout.
+        struct timeval timeout;
+        timeout.tv_sec = timeout_ms / 1000;
+        timeout.tv_usec = 1;
+
+        // Wait for data on fd with the specified timeout.
+        int ret = select(fd + 1, &readfds, NULL, NULL, &timeout);
+        if (ret < 0)
+        {
+            perror("select");
+            break;
+        }
+        if (ret == 0)
+        {
+            // Timeout reached; no new byte arrived in the given time.
+            // printf("Timeout reached, no data for %d ms. Breaking out of loop.\n", timeout_ms);
+            break;
+        }
+
+        // If data is available, read one byte.
+        ssize_t n = read(fd, (buffer + num_bytes), 1);
+        if (n < 0)
+        {
+            perror("read");
+            break;
+        }
+        if (n == 0)
+        {
+            // End-of-file or stream closed.
+            printf("EOF reached, breaking out of loop.\n");
+            break;
+        }
+
+        // Process the byte (here we simply print it).
+        // For binary data, you might want to store it in a buffer.
+        // printf("Read byte: '%c' (0x%02x)\n", byte, (unsigned char)byte);
+        num_bytes++;
+    }
+
+    return num_bytes;
+}
 
 
 /*
@@ -75,90 +165,23 @@ bool read_cat()
     std::cout << "Connecting to InfluxDB at " << ground_server_IP << ":" << port_number << std::endl;
 
    
-    std::string port = "cat " + find_pico_port();
-    FILE *fp = popen(port.c_str(), "r");
-    if (!fp)
-    {
-        std::cerr << "Failed to open " + port +  " using cat." << std::endl;
-        return false;
-    }
-
-    drain_pipeline(fp);
-    loop(fp, influxdb);
-    pclose(fp);
+    int fd = open_serial(find_pico_port());
+    loop(fd, influxdb);
+    close(fd);
     return true;
 }
 
-int loop_byte_by_byte(FILE *fp, char *buffer, int buffer_size, float timeout_ms)
-{
-    int fd = fileno(fp);
 
-    // Set up a buffer for one byte
-
-    int num_bytes = 0;
-    while (num_bytes < buffer_size)
-    {
-        // Set up the file descriptor set.
-        fd_set readfds;
-        FD_ZERO(&readfds);
-        FD_SET(fd, &readfds);
-
-        // Set up the timeout.
-        struct timeval timeout;
-        timeout.tv_sec = timeout_ms / 1000;
-        timeout.tv_usec = ((int)(timeout_ms * 10) % (1000*10))/10 * 1000;
-
-        // Wait for data on fd with the specified timeout.
-        int ret = select(fd + 1, &readfds, NULL, NULL, &timeout);
-        if (ret < 0)
-        {
-            perror("select");
-            break;
-        }
-        if (ret == 0)
-        {
-            // Timeout reached; no new byte arrived in the given time.
-            // printf("Timeout reached, no data for %d ms. Breaking out of loop.\n", timeout_ms);
-            break;
-        }
-
-        // If data is available, read one byte.
-        ssize_t n = read(fd, (buffer + num_bytes), 1);
-        if (n < 0)
-        {
-            perror("read");
-            break;
-        }
-        if (n == 0)
-        {
-            // End-of-file or stream closed.
-            printf("EOF reached, breaking out of loop.\n");
-            break;
-        }
-
-        // Process the byte (here we simply print it).
-        // For binary data, you might want to store it in a buffer.
-        // printf("Read byte: '%c' (0x%02x)\n", byte, (unsigned char)byte);
-        num_bytes++;
-    }
-
-    return num_bytes;
-}
-
-void loop(FILE *fp, std::unique_ptr<influxdb::InfluxDB> &influxdb)
+void loop(int fd, std::unique_ptr<influxdb::InfluxDB> &influxdb)
 {
     // TODO: Make reading and writing happen in different threads
     char buffer[BUFFER_SIZE];
     static int count = 0;
-    while (!feof(fp))
+    while (true)
     {
-        // size_t bytes_read = fread(buffer, 1, sizeof(buffer), fp);
-        // if (bytes_read == 0)
-        //     break; // End-of-file or error
-
         const float WAIT_MS = 1.f;
         
-        int bytes_read = loop_byte_by_byte(fp, buffer, BUFFER_SIZE, WAIT_MS);
+        int bytes_read = loop_byte_by_byte(fd, buffer, BUFFER_SIZE, WAIT_MS);
     
         if (bytes_read == 0) {
             continue;
@@ -168,8 +191,7 @@ void loop(FILE *fp, std::unique_ptr<influxdb::InfluxDB> &influxdb)
         std::cout << "Read attempt count: " << count++ << std::endl;
 
         // Process only if we got a complete Telemetry object
-
-        if (bytes_read == sizeof(Telemetry)+1)
+        if (bytes_read == sizeof(Telemetry))
         {
             Telemetry *t = reinterpret_cast<Telemetry *>(buffer);
             print_telemetry(t);
@@ -178,47 +200,4 @@ void loop(FILE *fp, std::unique_ptr<influxdb::InfluxDB> &influxdb)
 
         printf("\n\n");
     }
-}
-
-void drain_pipeline(FILE *fp)
-{
-    // Get the underlying file descriptor and set it to non-blocking
-    int fd = fileno(fp);
-    int flags = fcntl(fd, F_GETFL, 0);
-    fcntl(fd, F_SETFL, flags | O_NONBLOCK);
-
-    // Drain any buffered old data
-    char drain_buf[256];
-    while (true)
-    {
-        ssize_t n = read(fd, drain_buf, sizeof(drain_buf));
-        if (n < 0)
-        {
-            // No more data available when errno is EAGAIN or EWOULDBLOCK
-            if (errno == EAGAIN || errno == EWOULDBLOCK)
-            {
-                printf("Finished draining\n");
-                break;
-            }
-            else
-            {
-                std::cerr << "Error during drain: " << strerror(errno) << std::endl;
-                break;
-            }
-        }
-        else if (n == 0)
-        {
-            printf("Done with drain\n");
-            break;
-        }
-        else
-        {
-            printf("Drained %zd bytes\n", n);
-            // Continue draining; do not break here.
-        }
-    }
-
-    // Restore the file descriptor to its original blocking mode
-    fcntl(fd, F_SETFL, flags);
-    printf("\n\n");
 }
